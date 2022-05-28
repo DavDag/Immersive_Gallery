@@ -1,0 +1,140 @@
+/**
+ * Gradle plugins.
+ *
+ * Applying a plugin to a project allows the plugin to extend the project’s capabilities.
+ */
+plugins {
+    // Android plugin
+    id 'com.android.application'
+
+    // JetBrains' kotlin plugin
+    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.kapt'
+
+    // Type Safety for navigation actions
+    id 'androidx.navigation.safeargs.kotlin'
+}
+
+/**
+ * Android plugin.
+ *
+ * https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/dsl/CommonExtension
+ */
+android {
+    // API level to compile your project
+    compileSdk rootProject.targetAndroidVersion
+
+    /**
+     * Defaults for all build variants.
+     *
+     * https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/dsl/BaseFlavor
+     */
+    defaultConfig {
+        applicationId "it.unipi.di.sam.bmicalculator"
+        minSdk rootProject.minAndroidVersion
+        targetSdk rootProject.targetAndroidVersion
+        versionCode 1
+        versionName "1.0"
+    }
+
+    /**
+     * Build variants (NOT flavors).
+     *
+     * https://developer.android.com/studio/build/build-variants.html
+     * https://developer.android.com/reference/tools/gradle-api/4.1/com/android/build/api/dsl/BuildType
+     */
+    buildTypes {
+        /**
+         * Debug type to use in development mode.
+         */
+        debug {
+            debuggable true
+            minifyEnabled false
+            shrinkResources false
+
+            // Custom suffix to differentiate "debug" type
+            applicationIdSuffix ".debug"
+        }
+
+        /**
+         * Release type to use when releasing the app.
+         */
+        release {
+            debuggable false
+            minifyEnabled true
+            shrinkResources true
+
+            // Help minifying, obfuscating, and optimizing the code.
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    /**
+     * A list of feature that can be enabled / disabled.
+     *
+     * https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/dsl/BuildFeatures
+     */
+    buildFeatures {
+        // Enable view binding feature
+        // https://developer.android.com/topic/libraries/view-binding
+        viewBinding true
+    }
+
+    /**
+     * Java compilation options.
+     *
+     * https://developer.android.com/reference/tools/gradle-api/4.1/com/android/build/api/dsl/CompileOptions
+     */
+    compileOptions {
+        // Language level of the java source code.
+        sourceCompatibility JavaVersion.VERSION_1_8
+
+        // Version of the generated Java bytecode.
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    /**
+     * Additional compilation options for kotlin.
+     *
+     * https://kotlinlang.org/docs/gradle.html
+     */
+    kotlinOptions {
+        // Target version of the generated JVM bytecode
+        jvmTarget = '1.8'
+    }
+}
+
+/**
+ * A DependencyHandler is used to declare dependencies, such as:
+ * - External dependencies => implementation 'group:name:version:classifier@extension'
+ * - Project dependencies => project(':some-project')
+ * - File dependencies => implementation files('a file')
+ * - etc...
+ *
+ * https://docs.gradle.org/current/javadoc/org/gradle/api/artifacts/dsl/DependencyHandler.html
+ */
+dependencies {
+    // Basic
+    implementation "androidx.core:core-ktx:$versions.coreKtx"
+    implementation "androidx.appcompat:appcompat:$versions.appCompact"
+    implementation "com.google.android.material:material:$versions.material"
+    implementation "androidx.constraintlayout:constraintlayout:$versions.constraintLayout"
+
+    // Fragment
+    implementation "androidx.fragment:fragment:$versions.fragmemt"
+    implementation "androidx.fragment:fragment-ktx:$versions.fragment"
+
+    // Navigation
+    implementation "androidx.navigation:navigation-ui:$versions.navigation"
+    implementation "androidx.navigation:navigation-ui-ktx:$versions.navigation"
+    implementation "androidx.navigation:navigation-dynamic-features-fragment:$versions.navigation"
+    implementation "androidx.navigation:navigation-fragment:$versions.navigation"
+    implementation "androidx.navigation:navigation-fragment-ktx:$versions.navigation"
+
+    // ViewModel & LiveData
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$versions.lifecycle"
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$versions.lifecycle"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:$versions.lifecycle"
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    kapt "androidx.lifecycle:lifecycle-common-java8:$versions.lifecycle"
+}
