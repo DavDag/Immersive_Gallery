@@ -50,14 +50,14 @@ abstract class BaseFragment<T : ViewBinding>(
         return binding.root
     }
 
-    // Called when the view is created (and the binding is available) to setup the UI
-    abstract fun setupUI(savedInstanceState: Bundle?)
+    // Called when the view is created (and the binding is available) to setup the fragment
+    abstract fun setup(savedInstanceState: Bundle?)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         // Forward UI creation
-        this.setupUI(savedInstanceState)
+        this.setup(savedInstanceState)
     }
 
     override fun onDestroyView() {

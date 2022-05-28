@@ -21,8 +21,9 @@ plugins {
  * https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/dsl/CommonExtension
  */
 android {
+    compileSdk targetAndroidVersion
+
     // API level to compile your project
-    compileSdk rootProject.targetAndroidVersion
 
     /**
      * Defaults for all build variants.
@@ -30,7 +31,7 @@ android {
      * https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/dsl/BaseFlavor
      */
     defaultConfig {
-        applicationId "it.unipi.di.sam.bmicalculator"
+        applicationId "it.unipi.di.sam.immersivegallery"
         minSdk rootProject.minAndroidVersion
         targetSdk rootProject.targetAndroidVersion
         versionCode 1
