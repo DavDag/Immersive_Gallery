@@ -113,6 +113,8 @@ class MainScreenFragment :
                 selectionArgs.add(bucket.bucketId.toString())
             }
 
+        // TODO: Merge cursors to gen INTERNAL/EXTERNAL queries ?
+
         // Create cursor to retrieve images data
         val query = ContentResolverCompat.query(
             requireContext().contentResolver,
