@@ -2,38 +2,39 @@ package it.unipi.di.sam.immersivegallery.ui.main
 
 import android.database.Cursor
 import android.provider.MediaStore
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import it.unipi.di.sam.immersivegallery.models.ALL_BUCKET_FILTER
-import it.unipi.di.sam.immersivegallery.models.ImageData
-import it.unipi.di.sam.immersivegallery.models.ImageSearchFilterBucket
+import dagger.hilt.android.lifecycle.HiltViewModel
+import it.unipi.di.sam.immersivegallery.api.SharedPrefsRepository
+import it.unipi.di.sam.immersivegallery.models.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class MainScreenViewModel : ViewModel() {
-
-    private val _filtersLoaded = SingleEventLiveData<Unit>()
-    public val filtersLoaded: LiveData<Unit> = _filtersLoaded
-
-    private val _images = SingleEventLiveData<List<ImageData>>()
-    public val images: LiveData<List<ImageData>> = _images
+@HiltViewModel
+class MainScreenViewModel @Inject constructor(
+    private val sharedPrefsRepository: SharedPrefsRepository
+) : ViewModel() {
 
     private val _buckets = SingleEventLiveData<List<ImageSearchFilterBucket>>()
     public val buckets: LiveData<List<ImageSearchFilterBucket>> = _buckets
 
-    data class ImageSearchFilters(
-        var bucket: ImageSearchFilterBucket,
-    )
+    private val _filtersLoaded = SingleEventLiveData<Unit>()
+    public val filtersLoaded: LiveData<Unit> = _filtersLoaded
 
-    private var _filters: ImageSearchFilters = ImageSearchFilters(
-        bucket = ALL_BUCKET_FILTER
-    )
+    private val _oldFiltersLoaded = SingleEventLiveData<ImageSearchFilters>()
+    public val oldFiltersLoaded: LiveData<ImageSearchFilters> = _oldFiltersLoaded
 
+    private var _filters = DEFAULT_FILTERS
     private val _reload = SingleEventLiveData<ImageSearchFilters>()
     public val reload: LiveData<ImageSearchFilters> = _reload
+
+    private val _images = SingleEventLiveData<List<ImageData>>()
+    public val images: LiveData<List<ImageData>> = _images
+
+    // =======================================================
 
     fun loadFiltersQueryAsync(query: Cursor) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -114,6 +115,19 @@ class MainScreenViewModel : ViewModel() {
     }
 
     // =======================================================
+
+    fun getOldFilters() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val res = sharedPrefsRepository.loadSavedFilters() ?: DEFAULT_FILTERS
+            _oldFiltersLoaded.postValue(res)
+        }
+    }
+
+    fun saveFilters(filters: ImageSearchFilters) {
+        viewModelScope.launch(Dispatchers.IO) {
+            sharedPrefsRepository.saveFilters(filters)
+        }
+    }
 
     fun restoreFilters(filters: ImageSearchFilters) {
         _filters = filters

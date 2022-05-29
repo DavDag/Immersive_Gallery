@@ -6,16 +6,19 @@ import android.widget.AutoCompleteTextView
 import androidx.core.content.ContentResolverCompat
 import androidx.navigation.navGraphViewModels
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import dagger.hilt.android.AndroidEntryPoint
 import it.unipi.di.sam.immersivegallery.R
 import it.unipi.di.sam.immersivegallery.common.BaseFragment
 import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
 import it.unipi.di.sam.immersivegallery.models.ALL_BUCKET_FILTER
 import it.unipi.di.sam.immersivegallery.models.ImageSearchFilterBucket
+import it.unipi.di.sam.immersivegallery.models.ImageSearchFilters
 
+@AndroidEntryPoint
 class MainScreenFragment :
     BaseFragment<FragmentMainScreenBinding>(FragmentMainScreenBinding::inflate) {
 
-    private val viewModel: MainScreenViewModel by navGraphViewModels(R.id.main_navigation)
+    private val viewModel by navGraphViewModels<MainScreenViewModel>(R.id.main_navigation) { defaultViewModelProviderFactory }
 
     override fun setup(savedInstanceState: Bundle?) {
         setupUI()
@@ -27,14 +30,16 @@ class MainScreenFragment :
         // Filters loaded event.
         // (sent once after first async load)
         viewModel.filtersLoaded.observe(viewLifecycleOwner) {
-            // Retrieve old filters
-            val oldFilters = getOldFilters()
+            // Load old filters
+            viewModel.getOldFilters()
+        }
 
+        viewModel.oldFiltersLoaded.observe(viewLifecycleOwner) {
             // Update ui elements (ex. text inputs, checkboxes, ...)
-            updateUI(oldFilters)
+            updateUI(it)
 
             // Communicate view model to load old filters
-            viewModel.restoreFilters(oldFilters)
+            viewModel.restoreFilters(it)
         }
 
         // Buckets list event.
@@ -65,7 +70,7 @@ class MainScreenFragment :
             loadImageListAsync(it)
 
             // Save filters
-            saveFilters(it)
+            viewModel.saveFilters(it)
 
             // TODO: Update ui in loading mode ?
         }
@@ -86,6 +91,10 @@ class MainScreenFragment :
     }
 
     private fun loadFiltersAsync() {
+        // Send request to read filters from shared preferences
+        viewModel.getOldFilters()
+
+        // Create cursor to retrieve filters data
         val query = ContentResolverCompat.query(
             requireContext().contentResolver,
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -99,13 +108,16 @@ class MainScreenFragment :
             null,
         )
 
+        // Send cursor to the ViewModel to proceed asynchronously
         viewModel.loadFiltersQueryAsync(query)
     }
 
-    private fun loadImageListAsync(filters: MainScreenViewModel.ImageSearchFilters) {
+    private fun loadImageListAsync(filters: ImageSearchFilters) {
+        // Dynamically create selection & selection args
         val selection = StringBuilder("")
         val selectionArgs = mutableListOf<String>()
 
+        // Check if user has a bucket specified
         filters.bucket
             .takeIf { bucket -> bucket.bucketId != ALL_BUCKET_FILTER.bucketId }
             ?.let { bucket ->
@@ -113,6 +125,7 @@ class MainScreenFragment :
                 selectionArgs.add(bucket.bucketId.toString())
             }
 
+        // Create cursor to retrieve images data
         val query = ContentResolverCompat.query(
             requireContext().contentResolver,
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -131,22 +144,15 @@ class MainScreenFragment :
             null,
         )
 
+        // Send cursor to the ViewModel to proceed asynchronously
         viewModel.loadImagesQueryAsync(query)
     }
 
-    private fun getOldFilters(): MainScreenViewModel.ImageSearchFilters {
-        return MainScreenViewModel.ImageSearchFilters(
-            bucket = null ?: ALL_BUCKET_FILTER
-        )
-    }
-
-    private fun saveFilters(filters: MainScreenViewModel.ImageSearchFilters) {
-        // TODO
-    }
-
-    private fun updateUI(filters: MainScreenViewModel.ImageSearchFilters) {
+    private fun updateUI(filters: ImageSearchFilters) {
+        // Update corresponding UI elements
         with(binding) {
             filters.bucket.let { bucket ->
+                // Album
                 (filterAlbum.editText as MaterialAutoCompleteTextView)
                     .setText(bucket.displayName, false)
             }

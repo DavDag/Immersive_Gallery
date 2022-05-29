@@ -13,6 +13,12 @@ plugins {
 
     // Type Safety for navigation actions
     id 'androidx.navigation.safeargs.kotlin'
+
+    // Hilt
+    id 'dagger.hilt.android.plugin'
+
+    // Serialization
+    id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlin_version"
 }
 
 /**
@@ -138,4 +144,19 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:$versions.lifecycle"
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     kapt "androidx.lifecycle:lifecycle-common-java8:$versions.lifecycle"
+
+    // Dependencies Injection
+    kapt "com.google.dagger:hilt-compiler:$versions.hilt"
+    implementation "com.google.dagger:hilt-android:$versions.hilt"
+
+    // Serialization
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$versions.json_serialization"
+}
+
+
+kapt {
+    /**
+     * https://kotlinlang.org/docs/kapt.html#non-existent-type-correction
+     */
+    correctErrorTypes = true
 }
