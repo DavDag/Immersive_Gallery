@@ -9,7 +9,11 @@ import it.unipi.di.sam.immersivegallery.databinding.SpinnerItemBinding
 data class ImageSearchFilterBucket(
     val bucketId: Long,
     val bucketName: String,
+
+    val displayName: String,
 )
+
+val ALL_BUCKET_FILTER = ImageSearchFilterBucket(-1L, "", "All")
 
 class ImageSearchFilterBucketSpinnerItem :
     GenericAdapterItemHandler<ImageSearchFilterBucket, SpinnerItemBinding>() {
