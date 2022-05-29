@@ -13,6 +13,7 @@ import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
 import it.unipi.di.sam.immersivegallery.models.ALL_BUCKET_FILTER
 import it.unipi.di.sam.immersivegallery.models.ImageSearchFilterBucket
 import it.unipi.di.sam.immersivegallery.models.ImageSearchFilters
+import it.unipi.di.sam.immersivegallery.models.ImageSearchFiltersData
 
 @AndroidEntryPoint
 class MainScreenFragment :
@@ -29,28 +30,15 @@ class MainScreenFragment :
     private fun setupObservers() {
         // Filters loaded event.
         // (sent once after first async load)
-        viewModel.filtersLoaded.observe(viewLifecycleOwner) {
-            // Load old filters
-            viewModel.getOldFilters()
-        }
+        viewModel.filtersData.observe(viewLifecycleOwner) {
+            val filtersData = it.first
+            val oldFilters = it.second
 
-        viewModel.oldFiltersLoaded.observe(viewLifecycleOwner) {
             // Update ui elements (ex. text inputs, checkboxes, ...)
-            updateUI(it)
+            updateUI(oldFilters, filtersData)
 
             // Communicate view model to load old filters
-            viewModel.restoreFilters(it)
-        }
-
-        // Buckets list event.
-        // (sent once after first async load)
-        viewModel.buckets.observe(viewLifecycleOwner) {
-            // Fill the dropdown with the loaded values
-            (binding.filterAlbum.editText as MaterialAutoCompleteTextView).run {
-                setSimpleItems(
-                    it.map(ImageSearchFilterBucket::displayName).toTypedArray()
-                )
-            }
+            viewModel.restoreFilters(oldFilters)
         }
 
         // Images list event.
@@ -148,14 +136,19 @@ class MainScreenFragment :
         viewModel.loadImagesQueryAsync(query)
     }
 
-    private fun updateUI(filters: ImageSearchFilters) {
+    private fun updateUI(oldFilters: ImageSearchFilters, filtersData: ImageSearchFiltersData) {
         // Update corresponding UI elements
         with(binding) {
-            filters.bucket.let { bucket ->
-                // Album
-                (filterAlbum.editText as MaterialAutoCompleteTextView)
-                    .setText(bucket.displayName, false)
-            }
+            // Insert old values (or default ones)
+            // Album
+            (filterAlbum.editText as MaterialAutoCompleteTextView)
+                .setText(oldFilters.bucket.displayName, false)
+
+            // Fill the album dropdown
+            (binding.filterAlbum.editText as MaterialAutoCompleteTextView)
+                .setSimpleItems(
+                    filtersData.buckets.map(ImageSearchFilterBucket::displayName).toTypedArray()
+                )
         }
     }
 }

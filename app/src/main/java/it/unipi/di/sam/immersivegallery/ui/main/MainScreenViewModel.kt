@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import it.unipi.di.sam.immersivegallery.api.SharedPrefsRepository
+import it.unipi.di.sam.immersivegallery.common.MultipleEventLiveData
+import it.unipi.di.sam.immersivegallery.common.SingleEventLiveData
 import it.unipi.di.sam.immersivegallery.models.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -18,14 +20,12 @@ class MainScreenViewModel @Inject constructor(
     private val sharedPrefsRepository: SharedPrefsRepository
 ) : ViewModel() {
 
-    private val _buckets = SingleEventLiveData<List<ImageSearchFilterBucket>>()
-    public val buckets: LiveData<List<ImageSearchFilterBucket>> = _buckets
-
-    private val _filtersLoaded = SingleEventLiveData<Unit>()
-    public val filtersLoaded: LiveData<Unit> = _filtersLoaded
-
+    private val _filtersDataLoaded = SingleEventLiveData<ImageSearchFiltersData>()
     private val _oldFiltersLoaded = SingleEventLiveData<ImageSearchFilters>()
-    public val oldFiltersLoaded: LiveData<ImageSearchFilters> = _oldFiltersLoaded
+    public val filtersData =
+        MultipleEventLiveData
+            .From(_filtersDataLoaded, _oldFiltersLoaded)
+            .asLiveData()
 
     private var _filters = DEFAULT_FILTERS
     private val _reload = SingleEventLiveData<ImageSearchFilters>()
@@ -60,8 +60,11 @@ class MainScreenViewModel @Inject constructor(
                     )
                 }
 
-                _buckets.postValue(map.values.toList())
-                _filtersLoaded.postValue(Unit)
+                _filtersDataLoaded.postValue(
+                    ImageSearchFiltersData(
+                        buckets = map.values.toList()
+                    )
+                )
             }
         }
     }
@@ -139,7 +142,7 @@ class MainScreenViewModel @Inject constructor(
     }
 
     fun updateSelectedAlbum(selectedPosition: Int) {
-        _filters.bucket = _buckets.value?.get(selectedPosition) ?: return
+        _filters.bucket = _filtersDataLoaded.value?.buckets?.get(selectedPosition) ?: return
         _reload.postValue(_filters)
     }
 

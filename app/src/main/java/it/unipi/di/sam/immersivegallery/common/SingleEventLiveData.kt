@@ -1,4 +1,4 @@
-package it.unipi.di.sam.immersivegallery.ui.main
+package it.unipi.di.sam.immersivegallery.common
 
 import androidx.annotation.MainThread
 import androidx.lifecycle.LifecycleOwner

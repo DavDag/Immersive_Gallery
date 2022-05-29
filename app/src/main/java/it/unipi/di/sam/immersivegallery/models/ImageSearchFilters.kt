@@ -14,6 +14,10 @@ data class ImageSearchFilters(
     var bucket: ImageSearchFilterBucket,
 )
 
+data class ImageSearchFiltersData(
+    val buckets: List<ImageSearchFilterBucket>,
+)
+
 val ALL_BUCKET_FILTER = ImageSearchFilterBucket(
     bucketId = -1L,
     bucketName = "",
