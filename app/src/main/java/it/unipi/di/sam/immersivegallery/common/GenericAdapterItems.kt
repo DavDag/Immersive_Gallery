@@ -30,7 +30,7 @@ abstract class GenericAdapterItemHandler<T, B : ViewBinding> {
 
 }
 
-class ImageSearchFilterBucketSpinnerItem :
+class CarouselImageAdapterItemHandler :
     GenericAdapterItemHandler<ImageData, CarouselItemBinding>() {
 
     override fun id(data: ImageData): Long = data.bucketId

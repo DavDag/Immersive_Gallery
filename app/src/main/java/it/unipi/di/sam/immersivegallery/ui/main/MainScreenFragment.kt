@@ -2,33 +2,67 @@ package it.unipi.di.sam.immersivegallery.ui.main
 
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.widget.AutoCompleteTextView
 import androidx.core.content.ContentResolverCompat
+import androidx.core.view.GestureDetectorCompat
+import androidx.core.view.isVisible
 import androidx.navigation.navGraphViewModels
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import dagger.hilt.android.AndroidEntryPoint
 import it.unipi.di.sam.immersivegallery.R
-import it.unipi.di.sam.immersivegallery.common.BaseFragment
-import it.unipi.di.sam.immersivegallery.common.GenericRecyclerAdapter
-import it.unipi.di.sam.immersivegallery.common.ImageSearchFilterBucketSpinnerItem
-import it.unipi.di.sam.immersivegallery.common.replaceList
+import it.unipi.di.sam.immersivegallery.common.*
 import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
 import it.unipi.di.sam.immersivegallery.models.ALL_BUCKET_FILTER
 import it.unipi.di.sam.immersivegallery.models.ImageSearchFilterBucket
 import it.unipi.di.sam.immersivegallery.models.ImageSearchFilters
 import it.unipi.di.sam.immersivegallery.models.ImageSearchFiltersData
+import kotlin.math.abs
 
 @AndroidEntryPoint
 class MainScreenFragment :
     BaseFragment<FragmentMainScreenBinding>(FragmentMainScreenBinding::inflate) {
 
+    companion object {
+        const val V_SLIDE_TRIGGER = 0.15 // Percentage
+        const val H_SLIDE_TRIGGER = 0.15 // Percentage
+    }
+
     private val viewModel by navGraphViewModels<MainScreenViewModel>(R.id.main_navigation) { defaultViewModelProviderFactory }
+
+    private val gestureDetector by lazy { GestureDetectorCompat(requireContext(), gestureListener) }
 
     override fun setup(savedInstanceState: Bundle?) {
         setupUI()
         setupObservers()
         loadFiltersAsync()
+    }
+
+    private fun setupUI() {
+        with(binding) {
+            // Filters: Album
+            (filterAlbum.editText as AutoCompleteTextView).setText("loading...", false)
+            (binding.filterAlbum.editText as AutoCompleteTextView)
+                .setOnItemClickListener { _, _, i, _ ->
+                    viewModel.updateSelectedAlbum(i)
+                }
+
+            // Results
+            imagesListText.text = "loading..."
+            imagesList.adapter = GenericRecyclerAdapter(
+                context = requireContext(),
+                handler = CarouselImageAdapterItemHandler(),
+                items = emptyList(),
+            )
+
+            imagesList.setOnTouchListener { _, event ->
+                gestureDetector.onTouchEvent(event)
+                // Always consume event to "disable" standard interactions
+                return@setOnTouchListener true
+            }
+        }
     }
 
     private fun setupObservers() {
@@ -53,8 +87,8 @@ class MainScreenFragment :
 
             // Update carousel
             binding.imagesList.adapter!!.replaceList(it)
-
-            // TODO: Handle "0" results
+            binding.imagesList.isVisible = it.isNotEmpty()
+            binding.imagesListPlaceholder.isVisible = it.isEmpty()
         }
 
         // Reload event requested.
@@ -67,28 +101,6 @@ class MainScreenFragment :
             viewModel.saveFilters(it)
 
             // TODO: Update ui in loading mode ?
-        }
-    }
-
-    private fun setupUI() {
-        with(binding) {
-            // Filters: Album
-            (filterAlbum.editText as AutoCompleteTextView).setText("loading...", false)
-            (binding.filterAlbum.editText as AutoCompleteTextView)
-                .setOnItemClickListener { _, _, i, _ ->
-                    viewModel.updateSelectedAlbum(i)
-                }
-
-            // Results
-            imagesListText.text = "loading..."
-            imagesList.adapter = GenericRecyclerAdapter(
-                context = requireContext(),
-                handler = ImageSearchFilterBucketSpinnerItem(),
-                items = emptyList(),
-            )
-
-            // TODO: Handle click to focus image
-            // TODO: Slow down recycler (?)
         }
     }
 
@@ -165,6 +177,62 @@ class MainScreenFragment :
                 .setSimpleItems(
                     filtersData.buckets.map(ImageSearchFilterBucket::displayName).toTypedArray()
                 )
+        }
+    }
+
+    private val gestureListener = object : GestureDetector.SimpleOnGestureListener() {
+
+        private var _processed = true
+
+        override fun onDown(e: MotionEvent?): Boolean {
+            _processed = false
+            return super.onDown(e)
+        }
+
+        // TODO: Handle click to focus image
+
+        // https://developer.android.com/reference/android/view/GestureDetector.OnGestureListener
+        override fun onScroll(e1: MotionEvent?, e2: MotionEvent?, cdx: Float, cdy: Float): Boolean {
+            if (_processed) return true
+
+            // Cannot be null
+            val p1 = e1!!
+            val p2 = e2!!
+
+            // Compute delta and absolute delta
+            val dx = p2.x - p1.x
+            val dy = p2.y - p1.y
+            val adx = abs(dx)
+            val ady = abs(dy)
+
+            // User is sliding horizontally
+            if (adx > ady) {
+                // Check distance
+                if (adx > H_SLIDE_TRIGGER * binding.imagesList.width) {
+                    if (dx < 0) {
+                        Log.d("SCROLL", "Right")
+                        binding.imagesList.smoothScrollToPosition(
+                            binding.imagesList.adapter!!.nextPosition(false)
+                        )
+                    } else {
+                        Log.d("SCROLL", "Left")
+                        binding.imagesList.smoothScrollToPosition(
+                            binding.imagesList.adapter!!.prevPosition(false)
+                        )
+                    }
+                    _processed = true
+                }
+            }
+            // User is sliding vertically
+            else {
+                // Check distance
+                if (ady > V_SLIDE_TRIGGER * binding.imagesList.height) {
+                    // binding.imagesList.smoothScrollToPosition()
+                    // return true
+                }
+            }
+
+            return true
         }
     }
 }
