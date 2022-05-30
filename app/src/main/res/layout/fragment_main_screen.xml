@@ -22,9 +22,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:visibility="visible"
         tools:background="#FFFF00"
-        android:background="#FFFF00"
+        tools:visibility="visible"
         >
 
         <!--
@@ -85,8 +84,8 @@
         android:gravity="center_vertical"
         android:padding="16dp"
         android:elevation="1dp"
+        tools:visibility="gone"
         tools:background="#00FFFF"
-        android:background="#00FFFF"
         >
 
         <com.google.android.material.textfield.TextInputLayout
@@ -125,7 +124,6 @@
         tools:listitem="@layout/carousel_item"
         tools:background="#00FF00"
         tools:visibility="visible"
-        android:background="#00FF00"
         >
 
     </androidx.recyclerview.widget.RecyclerView>

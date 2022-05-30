@@ -8,17 +8,18 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 
-abstract class GenericRecyclerAdapter<T, B : ViewBinding> constructor(
+abstract class GenericRecyclerAdapter<T, B, K> constructor(
     context: Context,
-    private val handler: GenericAdapterItemHandler<T, B>,
-) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    private val handler: K,
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>()
+        where B : ViewBinding, K : GenericAdapterItemHandler<T, B> {
 
     private val inflater: LayoutInflater = LayoutInflater.from(context)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
         GenericRecyclerViewHolder(handler.inflate(inflater, parent, false).rootView)
 
-    abstract fun itemAt(position: Int): T
+    abstract fun itemAt(position: Int): T?
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int): Unit =
         handler.updateUI(handler.bind(holder.itemView), itemAt(position))
@@ -51,58 +52,64 @@ abstract class GenericRecyclerAdapter<T, B : ViewBinding> constructor(
 
     public fun nextPosition(loop: Boolean): Int {
         _position++
-        if (_position == itemCount + 1 && !loop) _position = itemCount
+        if (_position == itemCount && !loop) _position = itemCount - 1
         _position %= itemCount
         return _position
     }
 }
 
-class GenericRecyclerAdapterWithList<T, B : ViewBinding> constructor(
+class GenericRecyclerAdapterWithList<T, B, K> constructor(
     context: Context,
-    handler: GenericAdapterItemHandler<T, B>,
+    handler: K,
     private var items: List<T>,
-) : GenericRecyclerAdapter<T, B>(context = context, handler = handler) {
+) : GenericRecyclerAdapter<T, B, K>(context = context, handler = handler)
+        where B : ViewBinding, K : GenericAdapterItemHandler<T, B> {
 
-    override fun itemAt(position: Int): T = items[position]
+    override fun itemAt(position: Int): T? = items.getOrNull(position)
     override fun getItemCount(): Int = items.size
 
     fun replaceList(newList: List<T>) {
         this.items = newList
         super.notifyDataSetChanged()
     }
-
 }
 
-class GenericRecyclerAdapterWithCursor<T, B : ViewBinding> constructor(
+class GenericRecyclerAdapterWithCursor<T, B, K> constructor(
     context: Context,
-    private val handler: GenericAdapterItemHandlerWithCursorSupport<T, B>,
-    private var cursor: Cursor,
-) : GenericRecyclerAdapter<T, B>(context = context, handler = handler) {
+    private val handler: K,
+    protected var cursor: Cursor?,
+) : GenericRecyclerAdapter<T, B, K>(context = context, handler = handler)
+        where B : ViewBinding, K : GenericAdapterItemHandler<T, B>, K : WithCursorSupport<T> {
 
-    override fun itemAt(position: Int): T = handler.fromCursor(cursor)
-    override fun getItemCount(): Int = cursor.count
+    init {
+        handler.onUpdateCursor(null, cursor)
+    }
+
+    override fun itemAt(position: Int): T? = handler.fromCursorPosition(cursor, position)
+    override fun getItemCount(): Int = cursor?.count ?: 0
 
     fun replaceCursor(cursor: Cursor) {
+        this.cursor?.close()
+        handler.onUpdateCursor(this.cursor, cursor)
         this.cursor = cursor
         super.notifyDataSetChanged()
     }
-
 }
 
 fun <T> RecyclerView.Adapter<RecyclerView.ViewHolder>.replaceList(newList: List<T>) =
-    (this as GenericRecyclerAdapterWithList<T, *>).replaceList(newList)
+    (this as GenericRecyclerAdapterWithList<T, *, *>).replaceList(newList)
 
-fun <T> RecyclerView.Adapter<RecyclerView.ViewHolder>.replaceCursor(cursor: Cursor) =
-    (this as GenericRecyclerAdapterWithCursor<T, *>).replaceCursor(cursor)
+fun RecyclerView.Adapter<RecyclerView.ViewHolder>.replaceCursor(cursor: Cursor) =
+    (this as GenericRecyclerAdapterWithCursor<*, *, *>).replaceCursor(cursor)
 
 fun RecyclerView.Adapter<RecyclerView.ViewHolder>.position() =
-    (this as GenericRecyclerAdapter<*, *>).getPosition()
+    (this as GenericRecyclerAdapter<*, *, *>).getPosition()
 
 fun RecyclerView.Adapter<RecyclerView.ViewHolder>.position(value: Int) =
-    (this as GenericRecyclerAdapter<*, *>).updatePosition(value)
+    (this as GenericRecyclerAdapter<*, *, *>).updatePosition(value)
 
 fun RecyclerView.Adapter<RecyclerView.ViewHolder>.prevPosition(loop: Boolean) =
-    (this as GenericRecyclerAdapter<*, *>).prevPosition(loop)
+    (this as GenericRecyclerAdapter<*, *, *>).prevPosition(loop)
 
 fun RecyclerView.Adapter<RecyclerView.ViewHolder>.nextPosition(loop: Boolean) =
-    (this as GenericRecyclerAdapter<*, *>).nextPosition(loop)
+    (this as GenericRecyclerAdapter<*, *, *>).nextPosition(loop)

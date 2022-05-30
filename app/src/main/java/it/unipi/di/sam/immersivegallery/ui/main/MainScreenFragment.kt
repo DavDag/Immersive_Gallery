@@ -27,8 +27,8 @@ class MainScreenFragment :
     BaseFragment<FragmentMainScreenBinding>(FragmentMainScreenBinding::inflate) {
 
     companion object {
-        const val V_SLIDE_TRIGGER = 0.5 // Percentage
-        const val H_SLIDE_TRIGGER = 0.5 // Percentage
+        const val V_SLIDE_TRIGGER = 0.35 // Percentage
+        const val H_SLIDE_TRIGGER = 0.35 // Percentage
     }
 
     private val viewModel by navGraphViewModels<MainScreenViewModel>(R.id.main_navigation) { defaultViewModelProviderFactory }
@@ -52,10 +52,10 @@ class MainScreenFragment :
 
             // Results
             imagesListText.text = "loading..."
-            imagesList.adapter = GenericRecyclerAdapterWithList(
+            imagesList.adapter = GenericRecyclerAdapterWithCursor(
                 context = requireContext(),
-                handler = CarouselImageAdapterItemHandler(),
-                items = emptyList(),
+                handler = CarouselImageAdapterItemHandlerWithCursor(),
+                cursor = null,
             )
 
             imagesList.setOnTouchListener { _, event ->
@@ -86,6 +86,7 @@ class MainScreenFragment :
             viewModel.restoreFilters(oldFilters)
         }
 
+        /*
         // Images list event.
         // Sent every time a search gives results.
         viewModel.images.observe(viewLifecycleOwner) {
@@ -97,6 +98,7 @@ class MainScreenFragment :
             binding.imagesList.isVisible = it.isNotEmpty()
             binding.imagesListPlaceholder.isVisible = it.isEmpty()
         }
+        */
 
         // Reload event requested.
         // Sent every time a new search is requested.
@@ -168,7 +170,13 @@ class MainScreenFragment :
         )
 
         // Send cursor to the ViewModel to proceed asynchronously
-        viewModel.loadImagesQueryAsync(query)
+        // viewModel.loadImagesQueryAsync(query)
+
+        // Update cursor
+        binding.imagesList.adapter!!.replaceCursor(query)
+        binding.imagesListText.text = query.count.toString()
+        binding.imagesList.isVisible = (query.count != 0)
+        binding.imagesListPlaceholder.isVisible = (query.count == 0)
     }
 
     private fun updateUI(oldFilters: ImageSearchFilters, filtersData: ImageSearchFiltersData) {
