@@ -5,10 +5,14 @@ import android.provider.MediaStore
 import android.widget.AutoCompleteTextView
 import androidx.core.content.ContentResolverCompat
 import androidx.navigation.navGraphViewModels
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import dagger.hilt.android.AndroidEntryPoint
 import it.unipi.di.sam.immersivegallery.R
 import it.unipi.di.sam.immersivegallery.common.BaseFragment
+import it.unipi.di.sam.immersivegallery.common.GenericRecyclerAdapter
+import it.unipi.di.sam.immersivegallery.common.ImageSearchFilterBucketSpinnerItem
+import it.unipi.di.sam.immersivegallery.common.replaceList
 import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
 import it.unipi.di.sam.immersivegallery.models.ALL_BUCKET_FILTER
 import it.unipi.di.sam.immersivegallery.models.ImageSearchFilterBucket
@@ -48,7 +52,9 @@ class MainScreenFragment :
             binding.imagesListText.text = it.size.toString()
 
             // Update carousel
-            // TODO: Carousel
+            binding.imagesList.adapter!!.replaceList(it)
+
+            // TODO: Handle "0" results
         }
 
         // Reload event requested.
@@ -75,6 +81,14 @@ class MainScreenFragment :
 
             // Results
             imagesListText.text = "loading..."
+            imagesList.adapter = GenericRecyclerAdapter(
+                context = requireContext(),
+                handler = ImageSearchFilterBucketSpinnerItem(),
+                items = emptyList(),
+            )
+
+            // TODO: Handle click to focus image
+            // TODO: Slow down recycler (?)
         }
     }
 

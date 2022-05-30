@@ -6,7 +6,9 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.main.MainScreenFragment">
+    tools:background="#0000FF"
+    tools:context=".ui.main.MainScreenFragment"
+    >
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/filters_container"
@@ -50,8 +52,13 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/images_list"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:padding="16dp"
+        app:fastScrollEnabled="false"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        android:orientation="horizontal"
+        tools:listitem="@layout/carousel_item"
+        tools:background="#00FF00"
         >
 
     </androidx.recyclerview.widget.RecyclerView>

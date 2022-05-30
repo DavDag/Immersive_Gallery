@@ -54,8 +54,8 @@ class MainActivity : AppCompatActivity() {
             registerForActivityResult(
                 ActivityResultContracts.RequestMultiplePermissions()
             ) {
-                val granted = it.any { entry -> entry.value }
-                if (!granted) {
+                val notGranted = it.any { entry -> !entry.value }
+                if (notGranted) {
                     closeApplicationGracefullyForDeniedPermissions()
                 }
                 inflateNavGraph()

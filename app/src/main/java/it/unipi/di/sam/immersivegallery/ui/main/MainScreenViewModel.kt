@@ -1,5 +1,6 @@
 package it.unipi.di.sam.immersivegallery.ui.main
 
+import android.content.ContentUris
 import android.database.Cursor
 import android.provider.MediaStore
 import androidx.lifecycle.LiveData
@@ -99,8 +100,14 @@ class MainScreenViewModel @Inject constructor(
                     val bucketId = cursor.getLong(bucketIdColumn)
                     val bucketName = cursor.getString(bucketNameColumn)
 
+                    val resourceUri = ContentUris.withAppendedId(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        id
+                    )
+
                     list.add(
                         ImageData(
+                            uri = resourceUri,
                             id = id,
                             width = width,
                             height = height,

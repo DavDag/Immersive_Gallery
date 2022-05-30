@@ -6,30 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Adapter
 import android.widget.BaseAdapter
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
-
-abstract class GenericAdapterItemHandler<T, B : ViewBinding> {
-
-    abstract fun id(
-        data: T,
-    ): Long
-
-    abstract fun inflate(
-        layoutInflater: LayoutInflater,
-        parent: ViewGroup,
-        attachToParent: Boolean,
-    ): View
-
-    abstract fun bind(
-        view: View,
-    ): B
-
-    abstract fun updateUI(
-        binding: B,
-        data: T,
-    ): Unit
-
-}
 
 class GenericArrayAdapter<T, B : ViewBinding>(
     context: Context,
