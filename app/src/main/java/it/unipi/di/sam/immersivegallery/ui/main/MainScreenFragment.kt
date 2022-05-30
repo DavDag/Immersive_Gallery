@@ -52,7 +52,7 @@ class MainScreenFragment :
 
             // Results
             imagesListText.text = "loading..."
-            imagesList.adapter = GenericRecyclerAdapter(
+            imagesList.adapter = GenericRecyclerAdapterWithList(
                 context = requireContext(),
                 handler = CarouselImageAdapterItemHandler(),
                 items = emptyList(),
