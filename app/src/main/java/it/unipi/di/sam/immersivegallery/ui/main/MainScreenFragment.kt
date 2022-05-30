@@ -10,6 +10,7 @@ import androidx.core.content.ContentResolverCompat
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.isVisible
 import androidx.navigation.navGraphViewModels
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import dagger.hilt.android.AndroidEntryPoint
 import it.unipi.di.sam.immersivegallery.R
@@ -26,8 +27,8 @@ class MainScreenFragment :
     BaseFragment<FragmentMainScreenBinding>(FragmentMainScreenBinding::inflate) {
 
     companion object {
-        const val V_SLIDE_TRIGGER = 0.15 // Percentage
-        const val H_SLIDE_TRIGGER = 0.15 // Percentage
+        const val V_SLIDE_TRIGGER = 0.5 // Percentage
+        const val H_SLIDE_TRIGGER = 0.5 // Percentage
     }
 
     private val viewModel by navGraphViewModels<MainScreenViewModel>(R.id.main_navigation) { defaultViewModelProviderFactory }
@@ -58,6 +59,12 @@ class MainScreenFragment :
             )
 
             imagesList.setOnTouchListener { _, event ->
+                // Check for scroll ended
+                if (event.action == MotionEvent.ACTION_UP && !gestureListener.processed) {
+                    // Restore recycler position
+                    imagesList.smoothScrollToPosition(imagesList.adapter!!.position())
+                }
+                // Forward to gesture detector
                 gestureDetector.onTouchEvent(event)
                 // Always consume event to "disable" standard interactions
                 return@setOnTouchListener true
@@ -182,10 +189,10 @@ class MainScreenFragment :
 
     private val gestureListener = object : GestureDetector.SimpleOnGestureListener() {
 
-        private var _processed = true
+        public var processed = true
 
         override fun onDown(e: MotionEvent?): Boolean {
-            _processed = false
+            processed = false
             return super.onDown(e)
         }
 
@@ -193,7 +200,7 @@ class MainScreenFragment :
 
         // https://developer.android.com/reference/android/view/GestureDetector.OnGestureListener
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent?, cdx: Float, cdy: Float): Boolean {
-            if (_processed) return true
+            if (processed) return true
 
             // Cannot be null
             val p1 = e1!!
@@ -220,15 +227,31 @@ class MainScreenFragment :
                             binding.imagesList.adapter!!.prevPosition(false)
                         )
                     }
-                    _processed = true
+                    processed = true
+                }
+                // Scroll to show "responsiveness"
+                else {
+                    (binding.imagesList.layoutManager as LinearLayoutManager)
+                        .scrollToPositionWithOffset(
+                            binding.imagesList.adapter!!.position(),
+                            dx.toInt()
+                        )
                 }
             }
             // User is sliding vertically
             else {
                 // Check distance
                 if (ady > V_SLIDE_TRIGGER * binding.imagesList.height) {
-                    // binding.imagesList.smoothScrollToPosition()
-                    // return true
+                    if (dx < 0) {
+                        // TODO: Open filters
+                    } else {
+                        // TODO: Open image detail
+                    }
+                    processed = true
+                }
+                // Scroll to show "responsiveness"
+                else {
+
                 }
             }
 
