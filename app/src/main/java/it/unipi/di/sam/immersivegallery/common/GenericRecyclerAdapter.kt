@@ -32,7 +32,7 @@ class GenericRecyclerAdapter<T, B : ViewBinding> constructor(
 
     /**
      * Current position works *ONLY* if *ALL* updates are done via:
-     * - position (get / set)
+     * - updatePosition / getPosition
      * - prevPosition
      * - nextPosition
      */
