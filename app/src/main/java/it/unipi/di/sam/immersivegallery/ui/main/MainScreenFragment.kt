@@ -1,5 +1,6 @@
 package it.unipi.di.sam.immersivegallery.ui.main
 
+import android.content.Intent
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.InputType
@@ -19,10 +20,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import it.unipi.di.sam.immersivegallery.R
 import it.unipi.di.sam.immersivegallery.common.*
 import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
-import it.unipi.di.sam.immersivegallery.models.ALL_BUCKET_FILTER
-import it.unipi.di.sam.immersivegallery.models.ImageSearchFilterBucket
-import it.unipi.di.sam.immersivegallery.models.ImageSearchFilters
-import it.unipi.di.sam.immersivegallery.models.ImageSearchFiltersData
+import it.unipi.di.sam.immersivegallery.models.*
+import java.util.*
+import kotlin.concurrent.schedule
 import kotlin.math.abs
 
 @AndroidEntryPoint
@@ -32,9 +32,8 @@ class MainScreenFragment :
     // TODO: Fullscreen support (w-landscape)
     // TODO: On resume (?) reload cursor
     // TODO: Tutorial (first time)
-    // TODO: DetailsUri => Open intent (SHARE ?)
     // TODO: Merge cursors to gen INTERNAL/EXTERNAL queries ?
-    // TODO: Fade with time (filters / details)
+    // TODO: Auto "next"
 
     companion object {
         const val V_SLIDE_TRIGGER = 0.75 // Percentage
@@ -48,6 +47,8 @@ class MainScreenFragment :
         const val ACTION_HOR_SWIPE = 1
         const val ACTION_OPEN_FILTERS = 2
         const val ACTION_OPEN_DETAILS = 3
+
+        const val OVERLAY_CLOSE_DELAY = 2000L
     }
 
     private val viewModel by navGraphViewModels<MainScreenViewModel>(R.id.main_navigation) { defaultViewModelProviderFactory }
@@ -69,15 +70,16 @@ class MainScreenFragment :
                     viewModel.updateSelectedAlbum(i)
                 }
 
-            // Results
+            // Results: Counter
             imagesListText.editText!!.inputType = InputType.TYPE_NULL
             imagesListText.editText!!.setText("loading...")
+
+            // Results: Carousel
             imagesList.adapter = GenericRecyclerAdapterWithCursor(
                 context = requireContext(),
                 handler = CarouselImageAdapterItemHandlerWithCursor(),
                 cursor = null,
             )
-
             imagesList.setOnTouchListener { _, event ->
                 // Check for scroll ended
                 if (event.action == MotionEvent.ACTION_UP) gestureListener.onUp(event)
@@ -85,6 +87,29 @@ class MainScreenFragment :
                 gestureDetector.onTouchEvent(event)
                 // Always consume event to "disable" standard interactions
                 return@setOnTouchListener true
+            }
+            imagesList.adapter!!.onPositionChangedListener<ImageData> { _, data ->
+                detailsUri.editText!!.setText(data?.uri.toString())
+                detailsWidth.editText!!.setText(data?.width.toString())
+                detailsHeight.editText!!.setText(data?.height.toString())
+                detailsSize.editText!!.setText(data?.size.toString())
+                detailsMime.editText!!.setText(data?.mime.toString())
+
+                detailsUri.setEndIconOnClickListener(null)
+                if (data == null) return@onPositionChangedListener
+
+                detailsUri.setEndIconOnClickListener {
+                    startActivity(
+                        Intent.createChooser(
+                            Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_STREAM, data.uri)
+                                type = data.mime
+                            },
+                            null
+                        )
+                    )
+                }
             }
 
             // Details
@@ -203,29 +228,55 @@ class MainScreenFragment :
 
     private val gestureListener = object : GestureDetector.SimpleOnGestureListener() {
 
+        private var closingFiltersContainerTask: TimerTask? = null
+        private var closingDetailsContainerTask: TimerTask? = null
+
         private var swipeDirection = DIRECTION_NONE
         private var action = ACTION_NONE
 
         override fun onDown(e: MotionEvent?): Boolean {
+            // Clear flags
             swipeDirection = DIRECTION_NONE
             action = ACTION_NONE
+
             return super.onDown(e)
         }
 
         fun onUp(e: MotionEvent?) {
+            // "Spring" effect for carousel
             if (action != ACTION_HOR_SWIPE) {
-                // Restore recycler position
                 binding.imagesList.smoothScrollToPosition(binding.imagesList.adapter!!.position())
             }
 
-            if (action == ACTION_NONE && swipeDirection == DIRECTION_NONE) {
-                binding.filtersContainer.animate().translationY(0F)
-                binding.detailsContainer.animate().translationY(0F)
+            // "Spring" effect for overlays
+            if (action == ACTION_NONE && swipeDirection == DIRECTION_VERTICAL) {
+                // Hide only if it was shown
+                if (abs(binding.filtersContainer.translationY).toInt() != binding.filtersContainer.height) {
+                    binding.filtersContainer.animate().translationY(0F)
+                }
+
+                // Hide only if it was shown
+                if (abs(binding.detailsContainer.translationY).toInt() != binding.detailsContainer.height) {
+                    binding.detailsContainer.animate().translationY(0F)
+                }
             }
+        }
+
+        override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
+            // Cancel auto-close tasks (if any)
+            closingFiltersContainerTask?.cancel()
+            closingDetailsContainerTask?.cancel()
+
+            // Hide containers
+            binding.filtersContainer.animate().translationY(0F)
+            binding.detailsContainer.animate().translationY(0F)
+
+            return super.onSingleTapConfirmed(e)
         }
 
         // https://developer.android.com/reference/android/view/GestureDetector.OnGestureListener
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent?, cdx: Float, cdy: Float): Boolean {
+            // Exit if already "processed"
             if (action != ACTION_NONE) return true
 
             // Cannot be null
@@ -240,25 +291,32 @@ class MainScreenFragment :
 
             // User is sliding horizontally
             if (adx > ady && swipeDirection != DIRECTION_VERTICAL) {
+                // Update sliding direction
                 swipeDirection = DIRECTION_HORIZONTAL
 
                 // Check distance
                 if (adx > H_SLIDE_TRIGGER * binding.imagesList.width) {
                     if (dx < 0) {
-                        Log.d("SCROLL", "Right to Left")
+                        // Log.d("SCROLL", "Right to Left")
+
+                        // Focus "next" image for carousel
                         binding.imagesList.smoothScrollToPosition(
                             binding.imagesList.adapter!!.nextPosition(false)
                         )
                     } else {
-                        Log.d("SCROLL", "Left to Right")
+                        // Log.d("SCROLL", "Left to Right")
+
+                        // Focus "prev" image for carousel
                         binding.imagesList.smoothScrollToPosition(
                             binding.imagesList.adapter!!.prevPosition(false)
                         )
                     }
+                    // Declare action done
                     action = ACTION_HOR_SWIPE
                 }
                 // Scroll to show "responsiveness"
                 else {
+                    // Simple offset scroll that match user input delta
                     (binding.imagesList.layoutManager as LinearLayoutManager)
                         .scrollToPositionWithOffset(
                             binding.imagesList.adapter!!.position(),
@@ -267,31 +325,67 @@ class MainScreenFragment :
                 }
             }
             // User is sliding vertically
-            else if(swipeDirection != DIRECTION_HORIZONTAL) {
+            else if (swipeDirection != DIRECTION_HORIZONTAL) {
+                // Update sliding direction
                 swipeDirection = DIRECTION_VERTICAL
 
+                // Check vertical direction
                 if (dy > 0) {
                     // Check distance
                     if (ady > V_SLIDE_TRIGGER * binding.filtersContainer.height) {
-                        Log.d("SCROLL", "Top to Bottom")
+                        // Log.d("SCROLL", "Top to Bottom")
+
+                        // Fully show container
                         binding.filtersContainer.translationY =
                             binding.filtersContainer.height.toFloat()
+
+                        // Declare action done
                         action = ACTION_OPEN_FILTERS
+
+                        // Cancel auto-close task (if any)
+                        closingFiltersContainerTask?.cancel()
+
+                        // Create new auto-close task
+                        closingFiltersContainerTask = Timer("Filters Container close", false)
+                            .schedule(OVERLAY_CLOSE_DELAY) {
+                                // Log.d("AUTO-CLOSE", "Closing filters")
+
+                                // Close container
+                                binding.filtersContainer.animate().translationY(0F)
+                            }
                     }
                     // Scroll to show "responsiveness"
                     else {
+                        // Simple offset scroll that match user input delta
                         binding.filtersContainer.translationY = ady
                     }
                 } else {
                     // Check distance
                     if (ady > V_SLIDE_TRIGGER * binding.detailsContainer.height) {
-                        Log.d("SCROLL", "Bottom to Top")
+                        // Log.d("SCROLL", "Bottom to Top")
+
+                        // Fully show container
                         binding.detailsContainer.translationY =
                             -binding.detailsContainer.height.toFloat()
+
+                        // Declare action done
                         action = ACTION_OPEN_DETAILS
+
+                        // Cancel auto-close task (if any)
+                        closingDetailsContainerTask?.cancel()
+
+                        // Create new auto-close task
+                        closingDetailsContainerTask = Timer("Details Container close", false)
+                            .schedule(OVERLAY_CLOSE_DELAY) {
+                                // Log.d("AUTO-CLOSE", "Closing details")
+
+                                // Close container
+                                binding.detailsContainer.animate().translationY(0F)
+                            }
                     }
                     // Scroll to show "responsiveness"
                     else {
+                        // Simple offset scroll that match user input delta
                         binding.detailsContainer.translationY = -ady
                     }
                 }

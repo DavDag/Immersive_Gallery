@@ -8,16 +8,19 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 
+typealias OnPositionChangedListener<T> = (position: Int, data: T?) -> Unit
+
 abstract class GenericRecyclerAdapter<T, B, K> constructor(
     context: Context,
     private val handler: K,
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>()
         where B : ViewBinding, K : GenericAdapterItemHandler<T, B> {
 
-    private val inflater: LayoutInflater = LayoutInflater.from(context)
+    private var _listener: OnPositionChangedListener<T>? = null
+    private val _inflater: LayoutInflater = LayoutInflater.from(context)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
-        GenericRecyclerViewHolder(handler.inflate(inflater, parent, false).rootView)
+        GenericRecyclerViewHolder(handler.inflate(_inflater, parent, false).rootView)
 
     abstract fun itemAt(position: Int): T?
 
@@ -37,6 +40,7 @@ abstract class GenericRecyclerAdapter<T, B, K> constructor(
 
     public fun updatePosition(value: Int) {
         _position = value
+        _listener?.invoke(_position, itemAt(_position))
     }
 
     public fun getPosition(): Int {
@@ -47,6 +51,7 @@ abstract class GenericRecyclerAdapter<T, B, K> constructor(
         _position--
         if (_position == -1 && !loop) _position = 0
         _position = (_position + itemCount) % itemCount
+        updatePosition(_position)
         return _position
     }
 
@@ -54,7 +59,12 @@ abstract class GenericRecyclerAdapter<T, B, K> constructor(
         _position++
         if (_position == itemCount && !loop) _position = itemCount - 1
         _position %= itemCount
+        updatePosition(_position)
         return _position
+    }
+
+    fun setOnPositionChangedListener(listener: OnPositionChangedListener<T>) {
+        _listener = listener
     }
 }
 
@@ -77,7 +87,7 @@ class GenericRecyclerAdapterWithList<T, B, K> constructor(
 class GenericRecyclerAdapterWithCursor<T, B, K> constructor(
     context: Context,
     private val handler: K,
-    protected var cursor: Cursor?,
+    private var cursor: Cursor?,
 ) : GenericRecyclerAdapter<T, B, K>(context = context, handler = handler)
         where B : ViewBinding, K : GenericAdapterItemHandler<T, B>, K : WithCursorSupport<T> {
 
@@ -97,6 +107,9 @@ class GenericRecyclerAdapterWithCursor<T, B, K> constructor(
         super.notifyDataSetChanged()
     }
 }
+
+fun <T> RecyclerView.Adapter<RecyclerView.ViewHolder>.onPositionChangedListener(listener: OnPositionChangedListener<T>) =
+    (this as GenericRecyclerAdapter<T, *, *>).setOnPositionChangedListener(listener)
 
 fun <T> RecyclerView.Adapter<RecyclerView.ViewHolder>.replaceList(newList: List<T>) =
     (this as GenericRecyclerAdapterWithList<T, *, *>).replaceList(newList)
