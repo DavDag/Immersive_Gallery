@@ -90,6 +90,7 @@ class GenericRecyclerAdapterWithCursor<T, B, K> constructor(
     context: Context,
     private val handler: K,
     private var cursor: Cursor?,
+    private val cacheMaxSize: Int = 15,
 ) : GenericRecyclerAdapter<T, B, K>(context = context, handler = handler)
         where B : ViewBinding, K : GenericAdapterItemHandler<T, B>, K : WithCursorSupport<T> {
 
@@ -97,27 +98,57 @@ class GenericRecyclerAdapterWithCursor<T, B, K> constructor(
         handler.onUpdateCursor(null, cursor)
     }
 
-    // TODO: Some caching (?)
-    override fun itemAt(position: Int): T? = handler.fromCursorPosition(cursor, position)
+    private val cache = linkedMapOf<Int, T?>()
+
+    override fun itemAt(position: Int): T? {
+        // Search inside cache
+        if (cache.contains(position)) return cache[position]
+
+        // Read value from cursor
+        val value = handler.fromCursorPosition(cursor, position)
+
+        // Update cache
+        cache[position] = value
+
+        // Remove last item if cache is too big
+        if (cache.size >= cacheMaxSize) {
+            cache.remove(
+                cache.entries.first().key
+            )
+        }
+        // Log.d("CACHE", cache.entries.joinToString(",") { it.key.toString() })
+
+        // Returns
+        return value
+    }
+
     override fun getItemCount(): Int = cursor?.count ?: 0
 
     fun replaceCursor(cursor: Cursor, resetPosition: Boolean): Int {
+        // Close old cursor
         this.cursor?.close()
+
+        // Call cursor update on handler
         handler.onUpdateCursor(this.cursor, cursor)
+
+        // Update cursor
         this.cursor = cursor
 
+        // !! Invalidate cache
+        this.cache.clear()
+
+        // Notify recycler
         super.notifyDataSetChanged()
 
+        // Exit if cursor is empty
         if (cursor.count == 0) return 0
 
-        if (resetPosition) {
-            super.updatePosition(0)
-        } else if (cursor.count <= getPosition()) {
-            super.updatePosition(cursor.count - 1)
-        } else {
-            super.updatePosition(getPosition())
-        }
+        // Update position
+        if (resetPosition) super.updatePosition(0)
+        else if (cursor.count <= getPosition()) super.updatePosition(cursor.count - 1)
+        else super.updatePosition(getPosition())
 
+        // Returns "new" position
         return getPosition()
     }
 }
