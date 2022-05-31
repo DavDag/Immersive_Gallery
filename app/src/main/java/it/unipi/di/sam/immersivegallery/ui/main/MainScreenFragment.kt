@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.InputType
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.AutoCompleteTextView
@@ -21,6 +22,7 @@ import it.unipi.di.sam.immersivegallery.common.*
 import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
 import it.unipi.di.sam.immersivegallery.models.*
 import kotlin.math.abs
+import kotlin.math.min
 
 @AndroidEntryPoint
 class MainScreenFragment :
@@ -45,8 +47,9 @@ class MainScreenFragment :
     // TODO: Query to find old position (cause may change if user remove inner elements) (id changes ?)
 
     companion object {
-        const val V_SLIDE_TRIGGER = 0.75 // Percentage
-        const val H_SLIDE_TRIGGER = 0.6 // Percentage
+        const val V_SLIDE_TRIGGER = 0.75F // Percentage
+        const val H_SLIDE_TRIGGER = 0.6F // Percentage
+        const val SPRING_MAX_DELTA = 0.1F // Percentage
 
         const val DIRECTION_NONE = 0
         const val DIRECTION_HORIZONTAL = 1
@@ -57,7 +60,7 @@ class MainScreenFragment :
         const val ACTION_OPEN_FILTERS = 2
         const val ACTION_OPEN_DETAILS = 3
 
-        const val OVERLAY_CLOSE_DELAY = 15000L
+        const val OVERLAY_CLOSE_DELAY = 5000L
     }
 
     override fun onResume() {
@@ -71,13 +74,13 @@ class MainScreenFragment :
 
     private val isFiltersContainerDown: Boolean
         get() {
-            return abs(binding.filtersContainer.translationY).toInt() ==
+            return abs(binding.filtersContainer.translationY).toInt() >=
                     binding.filtersContainer.height
         }
 
     private val isDetailsContainerDown: Boolean
         get() {
-            return abs(binding.detailsContainer.translationY).toInt() ==
+            return abs(binding.detailsContainer.translationY).toInt() >=
                     binding.detailsContainer.height
         }
 
@@ -150,7 +153,12 @@ class MainScreenFragment :
             }
             imagesList.setOnTouchListener { _, event ->
                 // Check for scroll ended
-                if (event.action == MotionEvent.ACTION_UP) gestureListener.onUp(event)
+                if (event.action == MotionEvent.ACTION_UP ||
+                    event.action == MotionEvent.ACTION_OUTSIDE ||
+                    event.action == MotionEvent.ACTION_CANCEL ||
+                    event.action == MotionEvent.ACTION_POINTER_UP) {
+                    gestureListener.onUp(event)
+                }
                 // Forward to gesture detector
                 gestureDetector.onTouchEvent(event)
                 // Always consume event to "disable" standard interactions
@@ -381,12 +389,16 @@ class MainScreenFragment :
 
         private var swipeDirection = DIRECTION_NONE
         private var action = ACTION_NONE
+        private var viewOriginF = 0F
+        private var viewOriginD = 0F
         private var scrollDistance = 0
 
         override fun onDown(e: MotionEvent?): Boolean {
             // Clear flags
             swipeDirection = DIRECTION_NONE
             action = ACTION_NONE
+            viewOriginF = 0F
+            viewOriginD = 0F
             scrollDistance = 0
 
             return super.onDown(e)
@@ -395,30 +407,16 @@ class MainScreenFragment :
         fun onUp(e: MotionEvent?) {
             // "Spring" effect for carousel
             if (action != ACTION_HOR_SWIPE) {
-                // Smooth scroll
-                // Has issues with small distances...
-                if (scrollDistance < 50) {
-                    binding.imagesList.scrollToPosition(
-                        binding.imagesList.adapter!!.position()
-                    )
-                } else {
-                    binding.imagesList.smoothScrollToPosition(
-                        binding.imagesList.adapter!!.position()
-                    )
-                }
+                // Smooth scroll does not always work
+                binding.imagesList.scrollToPosition(
+                    binding.imagesList.adapter!!.position()
+                )
             }
 
             // "Spring" effect for overlays
             if (action == ACTION_NONE && swipeDirection == DIRECTION_VERTICAL) {
-                // Hide only if it was shown
-                if (!isFiltersContainerDown) {
-                    binding.filtersContainer.animate().translationY(0F)
-                }
-
-                // Hide only if it was shown
-                if (!isDetailsContainerDown) {
-                    binding.detailsContainer.animate().translationY(0F)
-                }
+                binding.filtersContainer.animate().translationY(viewOriginF)
+                binding.detailsContainer.animate().translationY(viewOriginD)
             }
         }
 
@@ -493,50 +491,86 @@ class MainScreenFragment :
 
                 // Check vertical direction
                 if (dy > 0) {
-                    // Exit if already down
-                    if (isFiltersContainerDown) return true
-
-                    // Check distance
-                    if (ady > V_SLIDE_TRIGGER * binding.filtersContainer.height) {
-                        // Log.d("SCROLL", "Top to Bottom")
+                    // "Spring" effect
+                    if (isFiltersContainerDown) {
+                        // Cap delta
+                        val mx = SPRING_MAX_DELTA * binding.filtersContainer.height
+                        val delta = min(ady, mx)
 
                         // Fully show container
                         binding.filtersContainer.translationY =
-                            binding.filtersContainer.height.toFloat()
+                            binding.filtersContainer.height.toFloat() + delta
 
                         // Declare action done
-                        action = ACTION_OPEN_FILTERS
+                        // action = ACTION_OPEN_DETAILS
+                        viewOriginF = binding.filtersContainer.height.toFloat()
 
                         // Reset auto-close timer
                         autoCloseFilters.restart()
                     }
-                    // Scroll to show "responsiveness"
                     else {
-                        // Simple offset scroll that match user input delta
-                        binding.filtersContainer.translationY = ady
+                        // Check distance
+                        if (ady > V_SLIDE_TRIGGER * binding.filtersContainer.height) {
+                            // Log.d("SCROLL", "Top to Bottom")
+
+                            // Fully show container
+                            binding.filtersContainer.translationY =
+                                binding.filtersContainer.height.toFloat()
+
+                            // Declare action done
+                            action = ACTION_OPEN_FILTERS
+                            viewOriginF = binding.filtersContainer.height.toFloat()
+
+                            // Reset auto-close timer
+                            autoCloseFilters.restart()
+                        }
+                        // Scroll to show "responsiveness"
+                        else {
+                            // Simple offset scroll that match user input delta
+                            binding.filtersContainer.translationY = viewOriginF + ady
+                            viewOriginF = 0F
+                        }
                     }
                 } else {
-                    // Exit if already down
-                    if (isDetailsContainerDown) return true
-
-                    // Check distance
-                    if (ady > V_SLIDE_TRIGGER * binding.detailsContainer.height) {
-                        // Log.d("SCROLL", "Bottom to Top")
+                    // "Spring" effect
+                    if (isDetailsContainerDown) {
+                        // Cap delta
+                        val mx = SPRING_MAX_DELTA * binding.detailsContainer.height
+                        val delta = min(ady, mx)
 
                         // Fully show container
                         binding.detailsContainer.translationY =
-                            -binding.detailsContainer.height.toFloat()
+                            -binding.detailsContainer.height.toFloat() - delta
 
                         // Declare action done
-                        action = ACTION_OPEN_DETAILS
+                        // action = ACTION_OPEN_DETAILS
+                        viewOriginD = -binding.detailsContainer.height.toFloat()
 
                         // Reset auto-close timer
                         autoCloseDetails.restart()
                     }
-                    // Scroll to show "responsiveness"
                     else {
-                        // Simple offset scroll that match user input delta
-                        binding.detailsContainer.translationY = -ady
+                        // Check distance
+                        if (ady > V_SLIDE_TRIGGER * binding.detailsContainer.height) {
+                            // Log.d("SCROLL", "Bottom to Top")
+
+                            // Fully show container
+                            binding.detailsContainer.translationY =
+                                -binding.detailsContainer.height.toFloat()
+
+                            // Declare action done
+                            action = ACTION_OPEN_DETAILS
+                            viewOriginD = -binding.detailsContainer.height.toFloat()
+
+                            // Reset auto-close timer
+                            autoCloseDetails.restart()
+                        }
+                        // Scroll to show "responsiveness"
+                        else {
+                            // Simple offset scroll that match user input delta
+                            binding.detailsContainer.translationY = - ady
+                            viewOriginD = 0F
+                        }
                     }
                 }
             }

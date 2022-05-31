@@ -1,24 +1,22 @@
 package it.unipi.di.sam.immersivegallery.common
 
-import java.util.*
-import kotlin.concurrent.schedule
+import android.os.Handler
+import android.os.Looper
 
 class RestartableAsyncTask constructor(
-    val name: String,
-    val delay: Long, // ms
-    val task: TimerTask.() -> Unit,
+    private val name: String,
+    private val delay: Long, // ms
+    private val task: () -> Unit,
 ) {
 
-    private val timer: Timer by lazy { Timer(name, false) }
-    private var _task: TimerTask? = null
+    private val handler by lazy { Handler(Looper.getMainLooper()) }
 
     public fun start() {
-        _task = timer.schedule(delay, task)
+        handler.postDelayed(task, delay)
     }
 
     public fun cancel() {
-        _task?.cancel()
-        _task = null
+        handler.removeCallbacksAndMessages(null)
     }
 
     public fun restart() {
