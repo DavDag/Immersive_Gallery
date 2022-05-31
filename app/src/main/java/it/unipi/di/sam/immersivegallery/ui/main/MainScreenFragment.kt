@@ -33,11 +33,15 @@ class MainScreenFragment :
     // TODO: Merge cursors to gen INTERNAL/EXTERNAL queries ?
     // TODO: Auto "next"
 
+    // TODO: Create data folders (by size, by ratio, ecc)
+
     // TODO: Update ui in loading mode ?
     // TODO: OnResume (reload filters ?)
     // TODO: Query to find old position (cause may change if user remove inner elements)
 
     // TODO: Catch intent for opening images
+
+    // TODO: Carousel background
 
     companion object {
         const val V_SLIDE_TRIGGER = 0.75 // Percentage
@@ -101,8 +105,8 @@ class MainScreenFragment :
                 detailsUri.editText!!.setText(data?.uri.toString())
                 detailsWidth.editText!!.setText(data?.width.toString())
                 detailsHeight.editText!!.setText(data?.height.toString())
-                detailsSize.editText!!.setText(data?.size.toString())
-                detailsMime.editText!!.setText(data?.mime.toString())
+                detailsSize.editText!!.setText(data?.size.toSizeWithUnit())
+                detailsMime.editText!!.setText(data?.mime)
 
                 detailsUri.setEndIconOnClickListener(null)
                 if (data == null) return@onPositionChangedListener
@@ -217,11 +221,11 @@ class MainScreenFragment :
         )
 
         // Update cursor
+        val isEmpty = (query.count == 0)
+        binding.imagesListPlaceholder.isVisible = isEmpty
+        binding.imagesListText.editText!!.setText(query.count.toString())
         val position = binding.imagesList.adapter!!.replaceCursor(query, resetPosition)
         binding.imagesList.scrollToPosition(position)
-        binding.imagesListText.editText!!.setText(query.count.toString())
-        binding.imagesList.isVisible = (query.count != 0)
-        binding.imagesListPlaceholder.isVisible = (query.count == 0)
     }
 
     private fun updateUI(oldFilters: ImageSearchFilters, filtersData: ImageSearchFiltersData) {

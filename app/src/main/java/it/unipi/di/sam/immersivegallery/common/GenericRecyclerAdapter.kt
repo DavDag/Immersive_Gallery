@@ -2,6 +2,7 @@ package it.unipi.di.sam.immersivegallery.common
 
 import android.content.Context
 import android.database.Cursor
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -39,6 +40,7 @@ abstract class GenericRecyclerAdapter<T, B, K> constructor(
     private var _position: Int = 0
 
     public fun updatePosition(value: Int) {
+        // Log.d("PSCH", "$_position => $value")
         _position = value
         _listener?.invoke(_position, itemAt(_position))
     }
@@ -48,19 +50,19 @@ abstract class GenericRecyclerAdapter<T, B, K> constructor(
     }
 
     public fun prevPosition(loop: Boolean): Int {
-        _position--
-        if (_position == -1 && !loop) _position = 0
-        _position = (_position + itemCount) % itemCount
-        updatePosition(_position)
-        return _position
+        var tmp = getPosition() - 1
+        if (tmp == -1 && !loop) tmp = 0
+        tmp = (tmp + itemCount) % itemCount
+        updatePosition(tmp)
+        return getPosition()
     }
 
     public fun nextPosition(loop: Boolean): Int {
-        _position++
-        if (_position == itemCount && !loop) _position = itemCount - 1
-        _position %= itemCount
-        updatePosition(_position)
-        return _position
+        var tmp = getPosition() + 1
+        if (tmp == itemCount && !loop) tmp = itemCount - 1
+        tmp %= itemCount
+        updatePosition(tmp)
+        return getPosition()
     }
 
     fun setOnPositionChangedListener(listener: OnPositionChangedListener<T>) {
@@ -103,10 +105,19 @@ class GenericRecyclerAdapterWithCursor<T, B, K> constructor(
         this.cursor?.close()
         handler.onUpdateCursor(this.cursor, cursor)
         this.cursor = cursor
+
         super.notifyDataSetChanged()
-        if (resetPosition) super.updatePosition(0)
-        else if (cursor.count >= position()) super.updatePosition(cursor.count - 1)
-        return position()
+
+        if (cursor.count == 0) return 0
+
+        if (resetPosition) {
+            super.updatePosition(0)
+        }
+        else if (cursor.count <= getPosition()) {
+            super.updatePosition(cursor.count - 1)
+        }
+
+        return getPosition()
     }
 }
 
