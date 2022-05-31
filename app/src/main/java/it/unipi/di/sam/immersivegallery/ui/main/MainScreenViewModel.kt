@@ -38,7 +38,7 @@ class MainScreenViewModel @Inject constructor(
         hasLoadedFilters = false
 
         viewModelScope.launch(Dispatchers.IO) {
-            delay(2000L)
+            delay(5000L)
             query.use { cursor ->
 
                 val bucketsMap = mutableMapOf(
@@ -50,22 +50,34 @@ class MainScreenViewModel @Inject constructor(
                     INF_SIZE_FILTER,
                 )
 
-                val mimes = mutableListOf(
-                    ALL_MIME_FILTER
+                val mimesMap = mutableMapOf(
+                    ALL_MIME_FILTER.type to ALL_MIME_FILTER,
                 )
 
-                val idColumn =
+                val sizeColumn =
+                    cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
+                val mimeColumn =
+                    cursor.getColumnIndexOrThrow(MediaStore.Images.Media.MIME_TYPE)
+                val bucketIdColumn =
                     cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_ID)
-                val nameColumn =
+                val bucketNameColumn =
                     cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
 
                 while (cursor.moveToNext()) {
-                    val id = cursor.getLong(idColumn)
-                    val name = cursor.getString(nameColumn)
-                    bucketsMap[id] = ImageSearchFilterBucket(
-                        bucketId = id,
-                        bucketName = name,
-                        displayName = name,
+                    val size = cursor.getInt(sizeColumn)
+                    val mime = cursor.getString(mimeColumn)
+                    val bucketId = cursor.getLong(bucketIdColumn)
+                    val bucketName = cursor.getString(bucketNameColumn)
+
+                    bucketsMap[bucketId] = ImageSearchFilterBucket(
+                        bucketId = bucketId,
+                        bucketName = bucketName,
+                        displayName = bucketName,
+                    )
+
+                    mimesMap[mime] = ImageSearchFilterMime(
+                        type = mime,
+                        displayName = mime,
                     )
                 }
 
@@ -73,7 +85,7 @@ class MainScreenViewModel @Inject constructor(
                     ImageSearchFiltersData(
                         buckets = bucketsMap.values.toList(),
                         sizes = sizes.toList(),
-                        mimes = mimes.toList(),
+                        mimes = mimesMap.values.toList(),
                     )
                 )
             }
@@ -104,6 +116,21 @@ class MainScreenViewModel @Inject constructor(
 
     fun updateSelectedAlbum(selectedPosition: Int) {
         filters.bucket = _filtersDataLoaded.value?.buckets?.get(selectedPosition) ?: return
+        _reload.postValue(Unit)
+    }
+
+    fun updateSelectedSizeMin(selectedPosition: Int) {
+        filters.sizeMin = _filtersDataLoaded.value?.sizes?.get(selectedPosition) ?: return
+        _reload.postValue(Unit)
+    }
+
+    fun updateSelectedSizeMax(selectedPosition: Int) {
+        filters.sizeMax = _filtersDataLoaded.value?.sizes?.get(selectedPosition) ?: return
+        _reload.postValue(Unit)
+    }
+
+    fun updateSelectedMime(selectedPosition: Int) {
+        filters.mime = _filtersDataLoaded.value?.mimes?.get(selectedPosition) ?: return
         _reload.postValue(Unit)
     }
 

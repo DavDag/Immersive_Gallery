@@ -25,11 +25,19 @@ class SharedPrefsRepositoryImpl @Inject constructor(
 
     override suspend fun loadSavedFilters(): ImageSearchFilters? =
         _sharedPreferences.get().getString(SEARCH_FILTERS_KEY, null)
-            ?.run(Json::decodeFromString)
+            ?.let { string ->
+                try {
+                    return@let Json.decodeFromString<ImageSearchFilters>(string)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    return@let null
+                }
+            }
 
     override suspend fun saveFilters(filters: ImageSearchFilters): Unit =
         with(_sharedPreferences.get().edit()) {
-            putString(SEARCH_FILTERS_KEY, Json.encodeToString(filters))
+            val string = Json.encodeToString(filters)
+            putString(SEARCH_FILTERS_KEY, string)
             apply()
         }
 

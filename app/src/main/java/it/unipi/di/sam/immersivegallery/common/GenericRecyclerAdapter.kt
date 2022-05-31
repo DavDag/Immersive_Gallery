@@ -112,9 +112,10 @@ class GenericRecyclerAdapterWithCursor<T, B, K> constructor(
 
         if (resetPosition) {
             super.updatePosition(0)
-        }
-        else if (cursor.count <= getPosition()) {
+        } else if (cursor.count <= getPosition()) {
             super.updatePosition(cursor.count - 1)
+        } else {
+            super.updatePosition(getPosition())
         }
 
         return getPosition()

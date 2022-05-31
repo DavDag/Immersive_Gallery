@@ -34,6 +34,8 @@ class MainScreenFragment :
     // TODO: Tutorial (first time)
     // TODO: Auto "next"
     // TODO: Carousel background
+    // TODO: Delay filter auto-close on touch
+    // TODO: "No query results" => "loading" (when loading)
 
     // (?)
     // TODO: OnResume (reload filters ?)
@@ -43,7 +45,7 @@ class MainScreenFragment :
 
     companion object {
         const val V_SLIDE_TRIGGER = 0.75 // Percentage
-        const val H_SLIDE_TRIGGER = 0.45 // Percentage
+        const val H_SLIDE_TRIGGER = 0.6 // Percentage
 
         const val DIRECTION_NONE = 0
         const val DIRECTION_HORIZONTAL = 1
@@ -54,7 +56,7 @@ class MainScreenFragment :
         const val ACTION_OPEN_FILTERS = 2
         const val ACTION_OPEN_DETAILS = 3
 
-        const val OVERLAY_CLOSE_DELAY = 5000L
+        const val OVERLAY_CLOSE_DELAY = 15000L
     }
 
     override fun onResume() {
@@ -89,7 +91,6 @@ class MainScreenFragment :
             // Filters
             filtersContainer.children.forEach { child ->
                 if (child is TextInputLayout) {
-                    child.editText!!.setText("loading...")
                     child.editText!!.inputType = InputType.TYPE_NULL
                 }
             }
@@ -98,6 +99,22 @@ class MainScreenFragment :
             (filtersAlbum.editText as AutoCompleteTextView)
                 .setOnItemClickListener { _, _, i, _ ->
                     viewModel.updateSelectedAlbum(i)
+                }
+
+            // Filters: Size (min/max)
+            (filtersSizeMin.editText as AutoCompleteTextView)
+                .setOnItemClickListener { _, _, i, _ ->
+                    viewModel.updateSelectedSizeMin(i)
+                }
+            (filtersSizeMax.editText as AutoCompleteTextView)
+                .setOnItemClickListener { _, _, i, _ ->
+                    viewModel.updateSelectedSizeMax(i)
+                }
+
+            // Filters: Mime
+            (filtersMime.editText as AutoCompleteTextView)
+                .setOnItemClickListener { _, _, i, _ ->
+                    viewModel.updateSelectedMime(i)
                 }
 
             // Results: Carousel
@@ -115,36 +132,26 @@ class MainScreenFragment :
                 return@setOnTouchListener true
             }
             imagesList.adapter!!.onPositionChangedListener<ImageData> { _, data ->
-                detailsUri.editText!!.setText(data?.uri.toString())
-                detailsWidth.editText!!.setText(data?.width.toString())
-                detailsHeight.editText!!.setText(data?.height.toString())
-                detailsSize.editText!!.setText(data?.size.toSizeWithUnit())
-                detailsMime.editText!!.setText(data?.mime)
+                updateDetailsState(false)
+                updateDetails(data)
+            }
 
-                detailsUri.setEndIconOnClickListener(null)
-                if (data == null) return@onPositionChangedListener
-
-                detailsUri.setEndIconOnClickListener {
-                    startActivity(
-                        Intent.createChooser(
-                            Intent().apply {
-                                action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_STREAM, data.uri)
-                                type = data.mime
-                            },
-                            null
-                        )
-                    )
+            // Placeholder
+            imagesListPlaceholder.children.forEach { child ->
+                if (child is TextInputLayout) {
+                    child.editText!!.inputType = InputType.TYPE_NULL
                 }
             }
 
             // Details
             detailsContainer.children.forEach { child ->
                 if (child is TextInputLayout) {
-                    child.editText!!.setText("loading...")
                     child.editText!!.inputType = InputType.TYPE_NULL
                 }
             }
+
+            updateFiltersState(true)
+            updateDetailsState(true)
         }
     }
 
@@ -152,6 +159,9 @@ class MainScreenFragment :
         // Filters loaded event.
         // (sent once after first async load)
         viewModel.filtersData.observe(viewLifecycleOwner) {
+            // Toggle loading state
+            updateFiltersState(false)
+
             val filtersData = it.first
             val oldFilters = it.second
 
@@ -166,6 +176,9 @@ class MainScreenFragment :
         // Reload event requested.
         // Sent every time a new search is requested.
         viewModel.reload.observe(viewLifecycleOwner) {
+            // Toggle loading state
+            updateDetailsState(true)
+
             // Create and send cursor to view model
             loadImageListAsync(true)
 
@@ -175,6 +188,9 @@ class MainScreenFragment :
     }
 
     private fun loadFiltersAsync() {
+        // Toggle loading state
+        updateFiltersState(true)
+
         // Send request to read filters from shared preferences
         viewModel.getOldFilters()
 
@@ -183,6 +199,8 @@ class MainScreenFragment :
             requireContext().contentResolver,
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             arrayOf(
+                MediaStore.Images.Media.SIZE,
+                MediaStore.Images.Media.MIME_TYPE,
                 MediaStore.Images.Media.BUCKET_ID,
                 MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
             ),
@@ -204,15 +222,23 @@ class MainScreenFragment :
         val filters = viewModel.filters
 
         // Dynamically create selection & selection args
-        val selection = StringBuilder("")
+        val selection = StringBuilder("1")
         val selectionArgs = mutableListOf<String>()
 
         // Check if user has a bucket specified
         filters.bucket
             .takeIf { bucket -> bucket.bucketId != ALL_BUCKET_FILTER.bucketId }
             ?.let { bucket ->
-                selection.append("${MediaStore.Images.Media.BUCKET_ID} = ?")
+                selection.append(" AND ${MediaStore.Images.Media.BUCKET_ID} = ?")
                 selectionArgs.add(bucket.bucketId.toString())
+            }
+
+        // Check if user has a mime type specified
+        filters.mime
+            .takeIf { mime -> mime.type != ALL_MIME_FILTER.type }
+            ?.let { mime ->
+                selection.append(" AND ${MediaStore.Images.Media.MIME_TYPE} = ?")
+                selectionArgs.add(mime.type)
             }
 
         // Create cursor to retrieve images data
@@ -247,17 +273,13 @@ class MainScreenFragment :
         with(binding) {
             // Insert old values (or default ones)
             // Album
-            (filtersAlbum.editText as MaterialAutoCompleteTextView)
-                .setText(oldFilters.bucket.displayName, false)
+            filtersAlbum.editText!!.setText(oldFilters.bucket.displayName)
             // Size min
-            (filtersSizeMin.editText as MaterialAutoCompleteTextView)
-                .setText(oldFilters.sizeMin.displayName, false)
+            filtersSizeMin.editText!!.setText(oldFilters.sizeMin.displayName)
             // Size max
-            (filtersSizeMax.editText as MaterialAutoCompleteTextView)
-                .setText(oldFilters.sizeMax.displayName, false)
+            filtersSizeMax.editText!!.setText(oldFilters.sizeMax.displayName)
             // Mime
-            (filtersMime.editText as MaterialAutoCompleteTextView)
-                .setText(oldFilters.mime.displayName, false)
+            filtersMime.editText!!.setText(oldFilters.mime.displayName)
 
             // Fill the album dropdown
             (binding.filtersAlbum.editText as MaterialAutoCompleteTextView)
@@ -280,6 +302,52 @@ class MainScreenFragment :
                 .setSimpleItems(
                     filtersData.mimes.map(ImageSearchFilterMime::displayName).toTypedArray()
                 )
+        }
+    }
+
+    private fun updateDetails(data: ImageData?) {
+        with(binding) {
+            detailsUri.editText!!.setText(data?.uri.toString())
+            detailsWidth.editText!!.setText(data?.width.toString())
+            detailsHeight.editText!!.setText(data?.height.toString())
+            detailsSize.editText!!.setText(data?.size.toSizeWithUnit())
+            detailsMime.editText!!.setText(data?.mime.toString())
+
+            detailsUri.setEndIconOnClickListener(null)
+            if (data == null) return
+
+            detailsUri.setEndIconOnClickListener {
+                startActivity(
+                    Intent.createChooser(
+                        Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_STREAM, data.uri)
+                            type = data.mime
+                        },
+                        null
+                    )
+                )
+            }
+        }
+    }
+
+    private fun updateFiltersState(loading: Boolean) {
+        if (loading) {
+            binding.filtersContainer.children.forEach { child ->
+                if (child is TextInputLayout) {
+                    child.editText!!.setText("loading...")
+                }
+            }
+        }
+    }
+
+    private fun updateDetailsState(loading: Boolean) {
+        if (loading) {
+            binding.detailsContainer.children.forEach { child ->
+                if (child is TextInputLayout) {
+                    child.editText!!.setText("loading...")
+                }
+            }
         }
     }
 

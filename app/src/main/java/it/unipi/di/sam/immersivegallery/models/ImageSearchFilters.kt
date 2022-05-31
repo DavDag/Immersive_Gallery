@@ -17,7 +17,7 @@ data class ImageSearchFilterSize(
 
 @Serializable
 data class ImageSearchFilterMime(
-    val mime: String,
+    val type: String,
     val displayName: String,
 )
 
@@ -52,7 +52,7 @@ val INF_SIZE_FILTER = ImageSearchFilterSize(
 )
 
 val ALL_MIME_FILTER = ImageSearchFilterMime(
-    mime = "images/*",
+    type = "image/*",
     displayName = "All",
 )
 
