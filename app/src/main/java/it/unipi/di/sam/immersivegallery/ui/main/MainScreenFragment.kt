@@ -20,13 +20,15 @@ import it.unipi.di.sam.immersivegallery.R
 import it.unipi.di.sam.immersivegallery.common.*
 import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
 import it.unipi.di.sam.immersivegallery.models.*
-import java.util.*
-import kotlin.concurrent.schedule
 import kotlin.math.abs
 
 @AndroidEntryPoint
 class MainScreenFragment :
     BaseFragment<FragmentMainScreenBinding>(FragmentMainScreenBinding::inflate) {
+
+    // TODO: Add colors
+    // TODO: Add string
+    // TODO: Add dimens
 
     // TODO: Fullscreen support (w-landscape)
     // TODO: Catch intent for opening images
@@ -34,14 +36,13 @@ class MainScreenFragment :
     // TODO: Tutorial (first time)
     // TODO: Auto "next"
     // TODO: Carousel background
-    // TODO: Delay filter auto-close on touch
     // TODO: "No query results" => "loading" (when loading)
 
     // (?)
     // TODO: OnResume (reload filters ?)
     // TODO: Update ui in loading mode
     // TODO: Create data folders (by size, by ratio, ecc)
-    // TODO: Query to find old position (cause may change if user remove inner elements)
+    // TODO: Query to find old position (cause may change if user remove inner elements) (id changes ?)
 
     companion object {
         const val V_SLIDE_TRIGGER = 0.75 // Percentage
@@ -80,6 +81,22 @@ class MainScreenFragment :
                     binding.detailsContainer.height
         }
 
+    private var autoCloseFilters = RestartableAsyncTask(
+        name = "Filters Container close",
+        delay = OVERLAY_CLOSE_DELAY,
+    ) {
+        // Log.d("AUTO-CLOSE", "Closing filters")
+        binding.filtersContainer.animate().translationY(0F)
+    }
+
+    private var autoCloseDetails = RestartableAsyncTask(
+        name = "Details Container close",
+        delay = OVERLAY_CLOSE_DELAY,
+    ) {
+        // Log.d("AUTO-CLOSE", "Closing details")
+        binding.detailsContainer.animate().translationY(0F)
+    }
+
     override fun setup(savedInstanceState: Bundle?) {
         setupUI()
         setupObservers()
@@ -93,6 +110,10 @@ class MainScreenFragment :
                 if (child is TextInputLayout) {
                     child.editText!!.inputType = InputType.TYPE_NULL
                 }
+            }
+            filtersContainerOverlay.setOnTouchListener { _, _ ->
+                autoCloseFilters.restart()
+                return@setOnTouchListener false
             }
 
             // Filters: Album
@@ -123,6 +144,10 @@ class MainScreenFragment :
                 handler = CarouselImageAdapterItemHandlerWithCursor(),
                 cursor = null,
             )
+            imagesList.adapter!!.onPositionChangedListener<ImageData> { _, data ->
+                updateDetailsState(false)
+                updateDetails(data)
+            }
             imagesList.setOnTouchListener { _, event ->
                 // Check for scroll ended
                 if (event.action == MotionEvent.ACTION_UP) gestureListener.onUp(event)
@@ -131,10 +156,7 @@ class MainScreenFragment :
                 // Always consume event to "disable" standard interactions
                 return@setOnTouchListener true
             }
-            imagesList.adapter!!.onPositionChangedListener<ImageData> { _, data ->
-                updateDetailsState(false)
-                updateDetails(data)
-            }
+            imagesList.setHasFixedSize(true)
 
             // Placeholder
             imagesListPlaceholder.children.forEach { child ->
@@ -148,6 +170,10 @@ class MainScreenFragment :
                 if (child is TextInputLayout) {
                     child.editText!!.inputType = InputType.TYPE_NULL
                 }
+            }
+            detailsContainerOverlay.setOnTouchListener { _, _ ->
+                autoCloseDetails.restart()
+                return@setOnTouchListener false
             }
 
             updateFiltersState(true)
@@ -353,16 +379,15 @@ class MainScreenFragment :
 
     private val gestureListener = object : GestureDetector.SimpleOnGestureListener() {
 
-        private var closingFiltersContainerTask: TimerTask? = null
-        private var closingDetailsContainerTask: TimerTask? = null
-
         private var swipeDirection = DIRECTION_NONE
         private var action = ACTION_NONE
+        private var scrollDistance = 0
 
         override fun onDown(e: MotionEvent?): Boolean {
             // Clear flags
             swipeDirection = DIRECTION_NONE
             action = ACTION_NONE
+            scrollDistance = 0
 
             return super.onDown(e)
         }
@@ -370,7 +395,17 @@ class MainScreenFragment :
         fun onUp(e: MotionEvent?) {
             // "Spring" effect for carousel
             if (action != ACTION_HOR_SWIPE) {
-                binding.imagesList.smoothScrollToPosition(binding.imagesList.adapter!!.position())
+                // Smooth scroll
+                // Has issues with small distances...
+                if (scrollDistance < 50) {
+                    binding.imagesList.scrollToPosition(
+                        binding.imagesList.adapter!!.position()
+                    )
+                } else {
+                    binding.imagesList.smoothScrollToPosition(
+                        binding.imagesList.adapter!!.position()
+                    )
+                }
             }
 
             // "Spring" effect for overlays
@@ -389,8 +424,8 @@ class MainScreenFragment :
 
         override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
             // Cancel auto-close tasks (if any)
-            closingFiltersContainerTask?.cancel()
-            closingDetailsContainerTask?.cancel()
+            autoCloseFilters.cancel()
+            autoCloseDetails.cancel()
 
             // Hide containers
             binding.filtersContainer.animate().translationY(0F)
@@ -438,6 +473,7 @@ class MainScreenFragment :
                     }
                     // Declare action done
                     action = ACTION_HOR_SWIPE
+                    scrollDistance = 0
                 }
                 // Scroll to show "responsiveness"
                 else {
@@ -447,6 +483,7 @@ class MainScreenFragment :
                             binding.imagesList.adapter!!.position(),
                             dx.toInt()
                         )
+                    scrollDistance = adx.toInt()
                 }
             }
             // User is sliding vertically
@@ -470,17 +507,8 @@ class MainScreenFragment :
                         // Declare action done
                         action = ACTION_OPEN_FILTERS
 
-                        // Cancel auto-close task (if any)
-                        closingFiltersContainerTask?.cancel()
-
-                        // Create new auto-close task
-                        closingFiltersContainerTask = Timer("Filters Container close", false)
-                            .schedule(OVERLAY_CLOSE_DELAY) {
-                                // Log.d("AUTO-CLOSE", "Closing filters")
-
-                                // Close container
-                                binding.filtersContainer.animate().translationY(0F)
-                            }
+                        // Reset auto-close timer
+                        autoCloseFilters.restart()
                     }
                     // Scroll to show "responsiveness"
                     else {
@@ -502,17 +530,8 @@ class MainScreenFragment :
                         // Declare action done
                         action = ACTION_OPEN_DETAILS
 
-                        // Cancel auto-close task (if any)
-                        closingDetailsContainerTask?.cancel()
-
-                        // Create new auto-close task
-                        closingDetailsContainerTask = Timer("Details Container close", false)
-                            .schedule(OVERLAY_CLOSE_DELAY) {
-                                // Log.d("AUTO-CLOSE", "Closing details")
-
-                                // Close container
-                                binding.detailsContainer.animate().translationY(0F)
-                            }
+                        // Reset auto-close timer
+                        autoCloseDetails.restart()
                     }
                     // Scroll to show "responsiveness"
                     else {

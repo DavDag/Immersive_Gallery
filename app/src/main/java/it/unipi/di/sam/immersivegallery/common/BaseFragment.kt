@@ -7,6 +7,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.viewbinding.ViewBinding
 
+typealias InflateFun<T> = (LayoutInflater, ViewGroup?, Boolean) -> T
+
 /**
  * [BaseFragment] class that wraps common setup for [Fragment].
  *
