@@ -9,10 +9,12 @@ import android.view.MotionEvent
 import android.widget.AutoCompleteTextView
 import androidx.core.content.ContentResolverCompat
 import androidx.core.view.GestureDetectorCompat
+import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.navigation.navGraphViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
 import it.unipi.di.sam.immersivegallery.R
 import it.unipi.di.sam.immersivegallery.common.*
@@ -27,9 +29,20 @@ import kotlin.math.abs
 class MainScreenFragment :
     BaseFragment<FragmentMainScreenBinding>(FragmentMainScreenBinding::inflate) {
 
+    // TODO: Fullscreen support (w-landscape)
+    // TODO: On resume (?) reload cursor
+    // TODO: Tutorial (first time)
+    // TODO: DetailsUri => Open intent (SHARE ?)
+    // TODO: Merge cursors to gen INTERNAL/EXTERNAL queries ?
+    // TODO: Fade with time (filters / details)
+
     companion object {
         const val V_SLIDE_TRIGGER = 0.75 // Percentage
         const val H_SLIDE_TRIGGER = 0.35 // Percentage
+
+        const val DIRECTION_NONE = 0
+        const val DIRECTION_HORIZONTAL = 1
+        const val DIRECTION_VERTICAL = 2
 
         const val ACTION_NONE = 0
         const val ACTION_HOR_SWIPE = 1
@@ -73,6 +86,13 @@ class MainScreenFragment :
                 // Always consume event to "disable" standard interactions
                 return@setOnTouchListener true
             }
+
+            // Details
+            detailsContainer.children.forEach { child ->
+                if (child is TextInputLayout) {
+                    child.editText!!.inputType = InputType.TYPE_NULL
+                }
+            }
         }
     }
 
@@ -90,19 +110,6 @@ class MainScreenFragment :
             viewModel.restoreFilters(oldFilters)
         }
 
-        /*
-        // Images list event.
-        // Sent every time a search gives results.
-        viewModel.images.observe(viewLifecycleOwner) {
-            // TODO: Temporary
-            binding.imagesListText.text = it.size.toString()
-
-            // Update carousel
-            binding.imagesList.adapter!!.replaceList(it)
-            binding.imagesList.isVisible = it.isNotEmpty()
-            binding.imagesListPlaceholder.isVisible = it.isEmpty()
-        }
-        */
 
         // Reload event requested.
         // Sent every time a new search is requested.
@@ -139,8 +146,6 @@ class MainScreenFragment :
         viewModel.loadFiltersQueryAsync(query)
     }
 
-    // TODO: On resume (?) reload cursor
-
     private fun loadImageListAsync(filters: ImageSearchFilters) {
         // Dynamically create selection & selection args
         val selection = StringBuilder("")
@@ -153,8 +158,6 @@ class MainScreenFragment :
                 selection.append("${MediaStore.Images.Media.BUCKET_ID} = ?")
                 selectionArgs.add(bucket.bucketId.toString())
             }
-
-        // TODO: Merge cursors to gen INTERNAL/EXTERNAL queries ?
 
         // Create cursor to retrieve images data
         val query = ContentResolverCompat.query(
@@ -174,9 +177,6 @@ class MainScreenFragment :
             null,
             null,
         )
-
-        // Send cursor to the ViewModel to proceed asynchronously
-        // viewModel.loadImagesQueryAsync(query)
 
         // Update cursor
         binding.imagesList.adapter!!.replaceCursor(query)
@@ -203,9 +203,11 @@ class MainScreenFragment :
 
     private val gestureListener = object : GestureDetector.SimpleOnGestureListener() {
 
+        private var swipeDirection = DIRECTION_NONE
         private var action = ACTION_NONE
 
         override fun onDown(e: MotionEvent?): Boolean {
+            swipeDirection = DIRECTION_NONE
             action = ACTION_NONE
             return super.onDown(e)
         }
@@ -216,16 +218,11 @@ class MainScreenFragment :
                 binding.imagesList.smoothScrollToPosition(binding.imagesList.adapter!!.position())
             }
 
-            if (action == ACTION_NONE) {
+            if (action == ACTION_NONE && swipeDirection == DIRECTION_NONE) {
                 binding.filtersContainer.animate().translationY(0F)
-            }
-
-            if (action != ACTION_OPEN_DETAILS) {
-                // TODO
+                binding.detailsContainer.animate().translationY(0F)
             }
         }
-
-        // TODO: Handle click to focus image
 
         // https://developer.android.com/reference/android/view/GestureDetector.OnGestureListener
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent?, cdx: Float, cdy: Float): Boolean {
@@ -242,7 +239,9 @@ class MainScreenFragment :
             val ady = abs(dy)
 
             // User is sliding horizontally
-            if (adx > ady) {
+            if (adx > ady && swipeDirection != DIRECTION_VERTICAL) {
+                swipeDirection = DIRECTION_HORIZONTAL
+
                 // Check distance
                 if (adx > H_SLIDE_TRIGGER * binding.imagesList.width) {
                     if (dx < 0) {
@@ -268,12 +267,13 @@ class MainScreenFragment :
                 }
             }
             // User is sliding vertically
-            else {
+            else if(swipeDirection != DIRECTION_HORIZONTAL) {
+                swipeDirection = DIRECTION_VERTICAL
+
                 if (dy > 0) {
                     // Check distance
                     if (ady > V_SLIDE_TRIGGER * binding.filtersContainer.height) {
                         Log.d("SCROLL", "Top to Bottom")
-                        // TODO: Open filters
                         binding.filtersContainer.translationY =
                             binding.filtersContainer.height.toFloat()
                         action = ACTION_OPEN_FILTERS
@@ -284,14 +284,15 @@ class MainScreenFragment :
                     }
                 } else {
                     // Check distance
-                    if (ady > V_SLIDE_TRIGGER * binding.filtersContainer.height) {
+                    if (ady > V_SLIDE_TRIGGER * binding.detailsContainer.height) {
                         Log.d("SCROLL", "Bottom to Top")
-                        // TODO: Open image detail
+                        binding.detailsContainer.translationY =
+                            -binding.detailsContainer.height.toFloat()
                         action = ACTION_OPEN_DETAILS
                     }
                     // Scroll to show "responsiveness"
                     else {
-                        // TODO:
+                        binding.detailsContainer.translationY = -ady
                     }
                 }
             }

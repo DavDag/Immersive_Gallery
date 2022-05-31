@@ -85,6 +85,7 @@ class GenericRecyclerAdapterWithCursor<T, B, K> constructor(
         handler.onUpdateCursor(null, cursor)
     }
 
+    // TODO: Some caching (?)
     override fun itemAt(position: Int): T? = handler.fromCursorPosition(cursor, position)
     override fun getItemCount(): Int = cursor?.count ?: 0
 
@@ -92,6 +93,7 @@ class GenericRecyclerAdapterWithCursor<T, B, K> constructor(
         this.cursor?.close()
         handler.onUpdateCursor(this.cursor, cursor)
         this.cursor = cursor
+        super.updatePosition(0)
         super.notifyDataSetChanged()
     }
 }
