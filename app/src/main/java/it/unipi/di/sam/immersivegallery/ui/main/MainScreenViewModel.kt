@@ -41,8 +41,17 @@ class MainScreenViewModel @Inject constructor(
             delay(2000L)
             query.use { cursor ->
 
-                val map = mutableMapOf<Long, ImageSearchFilterBucket>(
+                val bucketsMap = mutableMapOf(
                     ALL_BUCKET_FILTER.bucketId to ALL_BUCKET_FILTER
+                )
+
+                val sizes = mutableListOf(
+                    ZERO_SIZE_FILTER,
+                    INF_SIZE_FILTER,
+                )
+
+                val mimes = mutableListOf(
+                    ALL_MIME_FILTER
                 )
 
                 val idColumn =
@@ -53,7 +62,7 @@ class MainScreenViewModel @Inject constructor(
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idColumn)
                     val name = cursor.getString(nameColumn)
-                    map[id] = ImageSearchFilterBucket(
+                    bucketsMap[id] = ImageSearchFilterBucket(
                         bucketId = id,
                         bucketName = name,
                         displayName = name,
@@ -62,7 +71,9 @@ class MainScreenViewModel @Inject constructor(
 
                 _filtersDataLoaded.postValue(
                     ImageSearchFiltersData(
-                        buckets = map.values.toList()
+                        buckets = bucketsMap.values.toList(),
+                        sizes = sizes.toList(),
+                        mimes = mimes.toList(),
                     )
                 )
             }

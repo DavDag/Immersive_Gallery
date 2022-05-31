@@ -29,23 +29,21 @@ class MainScreenFragment :
     BaseFragment<FragmentMainScreenBinding>(FragmentMainScreenBinding::inflate) {
 
     // TODO: Fullscreen support (w-landscape)
-    // TODO: Tutorial (first time)
-    // TODO: Merge cursors to gen INTERNAL/EXTERNAL queries ?
-    // TODO: Auto "next"
-
-    // TODO: Create data folders (by size, by ratio, ecc)
-
-    // TODO: Update ui in loading mode ?
-    // TODO: OnResume (reload filters ?)
-    // TODO: Query to find old position (cause may change if user remove inner elements)
-
     // TODO: Catch intent for opening images
-
+    // TODO: Merge cursors to gen INTERNAL/EXTERNAL queries ?
+    // TODO: Tutorial (first time)
+    // TODO: Auto "next"
     // TODO: Carousel background
+
+    // (?)
+    // TODO: OnResume (reload filters ?)
+    // TODO: Update ui in loading mode
+    // TODO: Create data folders (by size, by ratio, ecc)
+    // TODO: Query to find old position (cause may change if user remove inner elements)
 
     companion object {
         const val V_SLIDE_TRIGGER = 0.75 // Percentage
-        const val H_SLIDE_TRIGGER = 0.35 // Percentage
+        const val H_SLIDE_TRIGGER = 0.45 // Percentage
 
         const val DIRECTION_NONE = 0
         const val DIRECTION_HORIZONTAL = 1
@@ -68,6 +66,18 @@ class MainScreenFragment :
 
     private val gestureDetector by lazy { GestureDetectorCompat(requireContext(), gestureListener) }
 
+    private val isFiltersContainerDown: Boolean
+        get() {
+            return abs(binding.filtersContainer.translationY).toInt() ==
+                    binding.filtersContainer.height
+        }
+
+    private val isDetailsContainerDown: Boolean
+        get() {
+            return abs(binding.detailsContainer.translationY).toInt() ==
+                    binding.detailsContainer.height
+        }
+
     override fun setup(savedInstanceState: Bundle?) {
         setupUI()
         setupObservers()
@@ -76,16 +86,19 @@ class MainScreenFragment :
 
     private fun setupUI() {
         with(binding) {
+            // Filters
+            filtersContainer.children.forEach { child ->
+                if (child is TextInputLayout) {
+                    child.editText!!.setText("loading...")
+                    child.editText!!.inputType = InputType.TYPE_NULL
+                }
+            }
+
             // Filters: Album
-            (filterAlbum.editText as AutoCompleteTextView).setText("loading...", false)
-            (binding.filterAlbum.editText as AutoCompleteTextView)
+            (filtersAlbum.editText as AutoCompleteTextView)
                 .setOnItemClickListener { _, _, i, _ ->
                     viewModel.updateSelectedAlbum(i)
                 }
-
-            // Results: Counter
-            imagesListText.editText!!.inputType = InputType.TYPE_NULL
-            imagesListText.editText!!.setText("loading...")
 
             // Results: Carousel
             imagesList.adapter = GenericRecyclerAdapterWithCursor(
@@ -128,6 +141,7 @@ class MainScreenFragment :
             // Details
             detailsContainer.children.forEach { child ->
                 if (child is TextInputLayout) {
+                    child.editText!!.setText("loading...")
                     child.editText!!.inputType = InputType.TYPE_NULL
                 }
             }
@@ -233,13 +247,38 @@ class MainScreenFragment :
         with(binding) {
             // Insert old values (or default ones)
             // Album
-            (filterAlbum.editText as MaterialAutoCompleteTextView)
+            (filtersAlbum.editText as MaterialAutoCompleteTextView)
                 .setText(oldFilters.bucket.displayName, false)
+            // Size min
+            (filtersSizeMin.editText as MaterialAutoCompleteTextView)
+                .setText(oldFilters.sizeMin.displayName, false)
+            // Size max
+            (filtersSizeMax.editText as MaterialAutoCompleteTextView)
+                .setText(oldFilters.sizeMax.displayName, false)
+            // Mime
+            (filtersMime.editText as MaterialAutoCompleteTextView)
+                .setText(oldFilters.mime.displayName, false)
 
             // Fill the album dropdown
-            (binding.filterAlbum.editText as MaterialAutoCompleteTextView)
+            (binding.filtersAlbum.editText as MaterialAutoCompleteTextView)
                 .setSimpleItems(
                     filtersData.buckets.map(ImageSearchFilterBucket::displayName).toTypedArray()
+                )
+
+            // Fill the size (min / max) dropdown
+            (binding.filtersSizeMin.editText as MaterialAutoCompleteTextView)
+                .setSimpleItems(
+                    filtersData.sizes.map(ImageSearchFilterSize::displayName).toTypedArray()
+                )
+            (binding.filtersSizeMax.editText as MaterialAutoCompleteTextView)
+                .setSimpleItems(
+                    filtersData.sizes.map(ImageSearchFilterSize::displayName).toTypedArray()
+                )
+
+            // Fill the mime dropdown
+            (binding.filtersMime.editText as MaterialAutoCompleteTextView)
+                .setSimpleItems(
+                    filtersData.mimes.map(ImageSearchFilterMime::displayName).toTypedArray()
                 )
         }
     }
@@ -269,12 +308,12 @@ class MainScreenFragment :
             // "Spring" effect for overlays
             if (action == ACTION_NONE && swipeDirection == DIRECTION_VERTICAL) {
                 // Hide only if it was shown
-                if (abs(binding.filtersContainer.translationY).toInt() != binding.filtersContainer.height) {
+                if (!isFiltersContainerDown) {
                     binding.filtersContainer.animate().translationY(0F)
                 }
 
                 // Hide only if it was shown
-                if (abs(binding.detailsContainer.translationY).toInt() != binding.detailsContainer.height) {
+                if (!isDetailsContainerDown) {
                     binding.detailsContainer.animate().translationY(0F)
                 }
             }
@@ -349,6 +388,9 @@ class MainScreenFragment :
 
                 // Check vertical direction
                 if (dy > 0) {
+                    // Exit if already down
+                    if (isFiltersContainerDown) return true
+
                     // Check distance
                     if (ady > V_SLIDE_TRIGGER * binding.filtersContainer.height) {
                         // Log.d("SCROLL", "Top to Bottom")
@@ -378,6 +420,9 @@ class MainScreenFragment :
                         binding.filtersContainer.translationY = ady
                     }
                 } else {
+                    // Exit if already down
+                    if (isDetailsContainerDown) return true
+
                     // Check distance
                     if (ady > V_SLIDE_TRIGGER * binding.detailsContainer.height) {
                         // Log.d("SCROLL", "Bottom to Top")
