@@ -99,12 +99,14 @@ class GenericRecyclerAdapterWithCursor<T, B, K> constructor(
     override fun itemAt(position: Int): T? = handler.fromCursorPosition(cursor, position)
     override fun getItemCount(): Int = cursor?.count ?: 0
 
-    fun replaceCursor(cursor: Cursor) {
+    fun replaceCursor(cursor: Cursor, resetPosition: Boolean): Int {
         this.cursor?.close()
         handler.onUpdateCursor(this.cursor, cursor)
         this.cursor = cursor
-        super.updatePosition(0)
         super.notifyDataSetChanged()
+        if (resetPosition) super.updatePosition(0)
+        else if (cursor.count >= position()) super.updatePosition(cursor.count - 1)
+        return position()
     }
 }
 
@@ -114,8 +116,8 @@ fun <T> RecyclerView.Adapter<RecyclerView.ViewHolder>.onPositionChangedListener(
 fun <T> RecyclerView.Adapter<RecyclerView.ViewHolder>.replaceList(newList: List<T>) =
     (this as GenericRecyclerAdapterWithList<T, *, *>).replaceList(newList)
 
-fun RecyclerView.Adapter<RecyclerView.ViewHolder>.replaceCursor(cursor: Cursor) =
-    (this as GenericRecyclerAdapterWithCursor<*, *, *>).replaceCursor(cursor)
+fun RecyclerView.Adapter<RecyclerView.ViewHolder>.replaceCursor(cursor: Cursor, reset: Boolean) =
+    (this as GenericRecyclerAdapterWithCursor<*, *, *>).replaceCursor(cursor, reset)
 
 fun RecyclerView.Adapter<RecyclerView.ViewHolder>.position() =
     (this as GenericRecyclerAdapter<*, *, *>).getPosition()

@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.InputType
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.AutoCompleteTextView
@@ -30,10 +29,15 @@ class MainScreenFragment :
     BaseFragment<FragmentMainScreenBinding>(FragmentMainScreenBinding::inflate) {
 
     // TODO: Fullscreen support (w-landscape)
-    // TODO: On resume (?) reload cursor
     // TODO: Tutorial (first time)
     // TODO: Merge cursors to gen INTERNAL/EXTERNAL queries ?
     // TODO: Auto "next"
+
+    // TODO: Update ui in loading mode ?
+    // TODO: OnResume (reload filters ?)
+    // TODO: Query to find old position (cause may change if user remove inner elements)
+
+    // TODO: Catch intent for opening images
 
     companion object {
         const val V_SLIDE_TRIGGER = 0.75 // Percentage
@@ -48,7 +52,12 @@ class MainScreenFragment :
         const val ACTION_OPEN_FILTERS = 2
         const val ACTION_OPEN_DETAILS = 3
 
-        const val OVERLAY_CLOSE_DELAY = 2000L
+        const val OVERLAY_CLOSE_DELAY = 5000L
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadImageListAsync(false)
     }
 
     private val viewModel by navGraphViewModels<MainScreenViewModel>(R.id.main_navigation) { defaultViewModelProviderFactory }
@@ -140,12 +149,10 @@ class MainScreenFragment :
         // Sent every time a new search is requested.
         viewModel.reload.observe(viewLifecycleOwner) {
             // Create and send cursor to view model
-            loadImageListAsync(it)
+            loadImageListAsync(true)
 
             // Save filters
-            viewModel.saveFilters(it)
-
-            // TODO: Update ui in loading mode ?
+            viewModel.saveFilters()
         }
     }
 
@@ -171,7 +178,13 @@ class MainScreenFragment :
         viewModel.loadFiltersQueryAsync(query)
     }
 
-    private fun loadImageListAsync(filters: ImageSearchFilters) {
+    private fun loadImageListAsync(resetPosition: Boolean) {
+        // Exit if filters are not loaded yet
+        if (!viewModel.hasLoadedFilters) return
+
+        // Retrieve filters
+        val filters = viewModel.filters
+
         // Dynamically create selection & selection args
         val selection = StringBuilder("")
         val selectionArgs = mutableListOf<String>()
@@ -204,7 +217,8 @@ class MainScreenFragment :
         )
 
         // Update cursor
-        binding.imagesList.adapter!!.replaceCursor(query)
+        val position = binding.imagesList.adapter!!.replaceCursor(query, resetPosition)
+        binding.imagesList.scrollToPosition(position)
         binding.imagesListText.editText!!.setText(query.count.toString())
         binding.imagesList.isVisible = (query.count != 0)
         binding.imagesListPlaceholder.isVisible = (query.count == 0)

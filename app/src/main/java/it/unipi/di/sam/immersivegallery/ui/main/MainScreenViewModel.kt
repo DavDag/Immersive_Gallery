@@ -27,15 +27,18 @@ class MainScreenViewModel @Inject constructor(
             .From(_filtersDataLoaded, _oldFiltersLoaded)
             .asLiveData()
 
-    private var _filters = DEFAULT_FILTERS
-    private val _reload = SingleEventLiveData<ImageSearchFilters>()
-    public val reload: LiveData<ImageSearchFilters> = _reload
+    public var hasLoadedFilters = false
+    public var filters = DEFAULT_FILTERS
+    private val _reload = SingleEventLiveData<Unit>()
+    public val reload: LiveData<Unit> = _reload
 
     // =======================================================
 
     fun loadFiltersQueryAsync(query: Cursor) {
+        hasLoadedFilters = false
+
         viewModelScope.launch(Dispatchers.IO) {
-            delay(1000L)
+            delay(2000L)
             query.use { cursor ->
 
                 val map = mutableMapOf<Long, ImageSearchFilterBucket>(
@@ -63,6 +66,8 @@ class MainScreenViewModel @Inject constructor(
                     )
                 )
             }
+
+            hasLoadedFilters = true
         }
     }
 
@@ -75,20 +80,20 @@ class MainScreenViewModel @Inject constructor(
         }
     }
 
-    fun saveFilters(filters: ImageSearchFilters) {
+    fun saveFilters() {
         viewModelScope.launch(Dispatchers.IO) {
             sharedPrefsRepository.saveFilters(filters)
         }
     }
 
     fun restoreFilters(filters: ImageSearchFilters) {
-        _filters = filters
-        _reload.postValue(_filters)
+        this.filters = filters
+        _reload.postValue(Unit)
     }
 
     fun updateSelectedAlbum(selectedPosition: Int) {
-        _filters.bucket = _filtersDataLoaded.value?.buckets?.get(selectedPosition) ?: return
-        _reload.postValue(_filters)
+        filters.bucket = _filtersDataLoaded.value?.buckets?.get(selectedPosition) ?: return
+        _reload.postValue(Unit)
     }
 
 }
