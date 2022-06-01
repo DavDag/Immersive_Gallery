@@ -32,17 +32,20 @@ class MainScreenFragment :
     // TODO: Add string
     // TODO: Add dimens
     // TODO: Gray => White (UI)
-
     // TODO: Fullscreen support (w-landscape => custom layout for landscape)
+
+    // (High Priority)
+    // TODO: Fullscreen support (portrait)
+    // TODO: Carousel background (adjust to transparent when with => placeholder !)
     // TODO: Catch intent for opening images
-    // TODO: Merge cursors to gen INTERNAL/EXTERNAL queries ?
+
+    // (Low Priority)
     // TODO: Tutorial (first time)
     // TODO: Auto "next"
-    // TODO: Carousel background (adjust to transparent when with => placeholder !)
+    // TODO: Merge cursors to gen INTERNAL/EXTERNAL queries ?
 
     // (?)
     // TODO: OnResume (reload filters ?)
-    // TODO: Update ui in loading mode
     // TODO: Create data folders (by size, by ratio, ecc)
     // TODO: Query to find old position (cause may change if user remove inner elements) (id changes ?)
 
@@ -79,6 +82,7 @@ class MainScreenFragment :
 
     override fun onResume() {
         super.onResume()
+        enterFullScreen()
         loadImageListAsync(false)
     }
 
@@ -469,6 +473,11 @@ class MainScreenFragment :
             binding.detailsContainer.animate().translationY(0F)
 
             return super.onSingleTapConfirmed(e)
+        }
+
+        override fun onLongPress(e: MotionEvent?) {
+            super.onLongPress(e)
+            toggleFullScreen()
         }
 
         // https://developer.android.com/reference/android/view/GestureDetector.OnGestureListener
