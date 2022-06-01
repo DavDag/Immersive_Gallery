@@ -237,14 +237,24 @@
         tools:translationY="-200dp">
 
         <!--
-        Guideline (50% w)
+        Guideline (Left)
         -->
         <androidx.constraintlayout.widget.Guideline
-            android:id="@+id/details_middle_guideline"
+            android:id="@+id/details_left_guideline"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            app:layout_constraintGuide_percent=".50" />
+            app:layout_constraintGuide_percent=".33" />
+
+        <!--
+        Guideline (Right)
+        -->
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/details_right_guideline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent=".66" />
 
         <!--
         Uri
@@ -282,8 +292,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="2dp"
-            android:hint="width"
-            app:layout_constraintEnd_toEndOf="@id/details_middle_guideline"
+            android:hint="Width"
+            app:layout_constraintEnd_toEndOf="@id/details_left_guideline"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/details_uri">
 
@@ -307,9 +317,10 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="2dp"
-            android:hint="height"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@id/details_middle_guideline"
+            android:layout_marginEnd="2dp"
+            android:hint="Height"
+            app:layout_constraintEnd_toEndOf="@id/details_right_guideline"
+            app:layout_constraintStart_toStartOf="@id/details_left_guideline"
             app:layout_constraintTop_toTopOf="@id/details_width">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -331,11 +342,11 @@
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="2dp"
-            android:hint="size"
-            app:layout_constraintEnd_toEndOf="@id/details_middle_guideline"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/details_width">
+            android:layout_marginStart="2dp"
+            android:hint="Size"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/details_right_guideline"
+            app:layout_constraintTop_toTopOf="@id/details_width">
 
             <com.google.android.material.textfield.TextInputEditText
                 style="@style/TextAppearance.Material3.LabelSmall"
@@ -349,6 +360,57 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <!--
+        Date taken
+        -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/details_date_taken"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="2dp"
+            android:hint="Date taken"
+            app:layout_constraintEnd_toEndOf="@id/details_left_guideline"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/details_width">
+
+            <com.google.android.material.textfield.TextInputEditText
+                style="@style/TextAppearance.Material3.LabelSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="false"
+                android:inputType="none"
+                android:text="21/05/2010"
+                android:textAlignment="center" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!--
+        Date modified
+        -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/details_date_modified"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:hint="Date modified"
+            app:layout_constraintEnd_toEndOf="@id/details_right_guideline"
+            app:layout_constraintStart_toStartOf="@id/details_left_guideline"
+            app:layout_constraintTop_toTopOf="@id/details_date_taken">
+
+            <com.google.android.material.textfield.TextInputEditText
+                style="@style/TextAppearance.Material3.LabelSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="false"
+                android:inputType="none"
+                android:text="21/05/2012"
+                android:textAlignment="center" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!--
         Mime
         -->
         <com.google.android.material.textfield.TextInputLayout
@@ -357,10 +419,10 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="2dp"
-            android:hint="mime"
+            android:hint="Mime"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@id/details_middle_guideline"
-            app:layout_constraintTop_toTopOf="@id/details_size">
+            app:layout_constraintStart_toStartOf="@id/details_right_guideline"
+            app:layout_constraintTop_toTopOf="@id/details_date_taken">
 
             <com.google.android.material.textfield.TextInputEditText
                 style="@style/TextAppearance.Material3.LabelSmall"
@@ -368,7 +430,7 @@
                 android:layout_height="wrap_content"
                 android:focusable="false"
                 android:inputType="none"
-                android:text="JPEG"
+                android:text="image/jpeg"
                 android:textAlignment="center" />
 
         </com.google.android.material.textfield.TextInputLayout>

@@ -46,13 +46,15 @@ class CarouselImageAdapterItemHandlerWithCursor :
     CarouselImageAdapterItemHandler(),
     WithCursorSupport<ImageData> {
 
-    var idColumn: Int? = null
-    var widthColumn: Int? = null
-    var heightColumn: Int? = null
-    var sizeColumn: Int? = null
-    var mimeColumn: Int? = null
-    var bucketIdColumn: Int? = null
-    var bucketNameColumn: Int? = null
+    private var idColumn: Int? = null
+    private var widthColumn: Int? = null
+    private var heightColumn: Int? = null
+    private var sizeColumn: Int? = null
+    private var mimeColumn: Int? = null
+    private var dateTakenColumn: Int? = null
+    private var dateModifiedColumn: Int? = null
+    private var bucketIdColumn: Int? = null
+    private var bucketNameColumn: Int? = null
 
     override fun onUpdateCursor(oldCursor: Cursor?, newCursor: Cursor?) {
         idColumn = newCursor?.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
@@ -62,6 +64,8 @@ class CarouselImageAdapterItemHandlerWithCursor :
         mimeColumn = newCursor?.getColumnIndexOrThrow(MediaStore.Images.Media.MIME_TYPE)
         bucketIdColumn = newCursor?.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_ID)
         bucketNameColumn = newCursor?.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+        dateTakenColumn = newCursor?.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN)
+        dateModifiedColumn = newCursor?.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_MODIFIED)
     }
 
     override fun fromCursorPosition(cursor: Cursor?, position: Int): ImageData? {
@@ -74,6 +78,8 @@ class CarouselImageAdapterItemHandlerWithCursor :
         val height = heightColumn?.run(cursor::getInt) ?: return null
         val size = sizeColumn?.run(cursor::getInt) ?: return null
         val mime = mimeColumn?.run(cursor::getString) ?: return null
+        val dataTaken = dateTakenColumn?.run(cursor::getLong) ?: return null
+        val dataModified = dateModifiedColumn?.run(cursor::getLong) ?: return null
         val bucketId = bucketIdColumn?.run(cursor::getLong) ?: return null
         val bucketName = bucketNameColumn?.run(cursor::getString) ?: return null
 
@@ -89,6 +95,8 @@ class CarouselImageAdapterItemHandlerWithCursor :
             height = height,
             size = size,
             mime = mime,
+            dataTaken = dataTaken, // already in ms
+            dataModified = dataModified * 1000L, // sec => ms
             bucketId = bucketId,
             bucketName = bucketName,
         )

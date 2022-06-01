@@ -9,6 +9,8 @@ data class ImageData(
     val height: Int,
     val size: Int,
     val mime: String,
+    val dataTaken: Long,
+    val dataModified: Long,
     val bucketId: Long,
     val bucketName: String,
 )

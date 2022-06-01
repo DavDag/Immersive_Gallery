@@ -1,10 +1,10 @@
 package it.unipi.di.sam.immersivegallery.ui.main
 
 import android.content.Intent
+import android.icu.text.SimpleDateFormat
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.InputType
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.AutoCompleteTextView
@@ -32,19 +32,21 @@ class MainScreenFragment :
     // TODO: Add string
     // TODO: Add dimens
 
-    // TODO: Fullscreen support (w-landscape)
+    // TODO: Fullscreen support (w-landscape => custom layout for landscape)
     // TODO: Catch intent for opening images
     // TODO: Merge cursors to gen INTERNAL/EXTERNAL queries ?
     // TODO: Tutorial (first time)
     // TODO: Auto "next"
     // TODO: Carousel background
-    // TODO: "No query results" => "loading" (when loading)
+    // TODO: Size filters
+    // TODO: Loading screen before entering nav graph
 
     // (?)
     // TODO: OnResume (reload filters ?)
     // TODO: Update ui in loading mode
     // TODO: Create data folders (by size, by ratio, ecc)
     // TODO: Query to find old position (cause may change if user remove inner elements) (id changes ?)
+    // TODO: "No query results" => "loading" (when loading)
 
     companion object {
         const val V_SLIDE_TRIGGER = 0.75F // Percentage
@@ -60,8 +62,22 @@ class MainScreenFragment :
         const val ACTION_OPEN_FILTERS = 2
         const val ACTION_OPEN_DETAILS = 3
 
-        const val OVERLAY_CLOSE_DELAY = 5000L
+        const val OVERLAY_CLOSE_DELAY = 15000L
+
+        val IMAGE_DATA_QUERY_COLUMNS = mutableListOf(
+            MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.WIDTH,
+            MediaStore.Images.Media.HEIGHT,
+            MediaStore.Images.Media.SIZE,
+            MediaStore.Images.Media.MIME_TYPE,
+            MediaStore.Images.Media.DATE_TAKEN,
+            MediaStore.Images.Media.DATE_MODIFIED,
+            MediaStore.Images.Media.BUCKET_ID,
+            MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
+        ).toTypedArray()
     }
+
+    private val DATE_FORMAT by lazy { SimpleDateFormat("dd/MM/yyyy", currentLocale) }
 
     override fun onResume() {
         super.onResume()
@@ -156,7 +172,8 @@ class MainScreenFragment :
                 if (event.action == MotionEvent.ACTION_UP ||
                     event.action == MotionEvent.ACTION_OUTSIDE ||
                     event.action == MotionEvent.ACTION_CANCEL ||
-                    event.action == MotionEvent.ACTION_POINTER_UP) {
+                    event.action == MotionEvent.ACTION_POINTER_UP
+                ) {
                     gestureListener.onUp(event)
                 }
                 // Forward to gesture detector
@@ -279,15 +296,7 @@ class MainScreenFragment :
         val query = ContentResolverCompat.query(
             requireContext().contentResolver,
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            arrayOf(
-                MediaStore.Images.Media._ID,
-                MediaStore.Images.Media.WIDTH,
-                MediaStore.Images.Media.HEIGHT,
-                MediaStore.Images.Media.SIZE,
-                MediaStore.Images.Media.MIME_TYPE,
-                MediaStore.Images.Media.BUCKET_ID,
-                MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
-            ),
+            IMAGE_DATA_QUERY_COLUMNS,
             selection.toString(),
             selectionArgs.toTypedArray(),
             null,
@@ -346,6 +355,8 @@ class MainScreenFragment :
             detailsHeight.editText!!.setText(data?.height.toString())
             detailsSize.editText!!.setText(data?.size.toSizeWithUnit())
             detailsMime.editText!!.setText(data?.mime.toString())
+            detailsDateTaken.editText!!.setText(data?.dataTaken.toDateTime(DATE_FORMAT))
+            detailsDateModified.editText!!.setText(data?.dataModified.toDateTime(DATE_FORMAT))
 
             detailsUri.setEndIconOnClickListener(null)
             if (data == null) return
@@ -415,6 +426,7 @@ class MainScreenFragment :
 
             // "Spring" effect for overlays
             if (action == ACTION_NONE && swipeDirection == DIRECTION_VERTICAL) {
+                // TODO: Vertical swipe close the *other* container
                 binding.filtersContainer.animate().translationY(viewOriginF)
                 binding.detailsContainer.animate().translationY(viewOriginD)
             }
@@ -507,8 +519,7 @@ class MainScreenFragment :
 
                         // Reset auto-close timer
                         autoCloseFilters.restart()
-                    }
-                    else {
+                    } else {
                         // Check distance
                         if (ady > V_SLIDE_TRIGGER * binding.filtersContainer.height) {
                             // Log.d("SCROLL", "Top to Bottom")
@@ -548,8 +559,7 @@ class MainScreenFragment :
 
                         // Reset auto-close timer
                         autoCloseDetails.restart()
-                    }
-                    else {
+                    } else {
                         // Check distance
                         if (ady > V_SLIDE_TRIGGER * binding.detailsContainer.height) {
                             // Log.d("SCROLL", "Bottom to Top")
@@ -568,7 +578,7 @@ class MainScreenFragment :
                         // Scroll to show "responsiveness"
                         else {
                             // Simple offset scroll that match user input delta
-                            binding.detailsContainer.translationY = - ady
+                            binding.detailsContainer.translationY = -ady
                             viewOriginD = 0F
                         }
                     }
