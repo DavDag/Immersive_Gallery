@@ -1,11 +1,10 @@
 package it.unipi.di.sam.immersivegallery.ui.main
 
 import android.content.Intent
+import android.graphics.PixelFormat
 import android.icu.text.SimpleDateFormat
 import android.opengl.GLSurfaceView
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.MediaStore
 import android.text.InputType
 import android.view.GestureDetector
@@ -24,10 +23,6 @@ import it.unipi.di.sam.immersivegallery.R
 import it.unipi.di.sam.immersivegallery.common.*
 import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
 import it.unipi.di.sam.immersivegallery.models.*
-import javax.microedition.khronos.egl.EGL10
-import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.egl.EGLContext
-import javax.microedition.khronos.egl.EGLDisplay
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -85,12 +80,6 @@ class MainScreenFragment :
     }
 
     private val DATE_FORMAT by lazy { SimpleDateFormat("dd/MM/yyyy", currentLocale) }
-
-    override fun onResume() {
-        super.onResume()
-        enterFullScreen()
-        loadImageListAsync(false)
-    }
 
     private val viewModel by navGraphViewModels<MainScreenViewModel>(R.id.main_navigation) { defaultViewModelProviderFactory }
 
@@ -632,11 +621,26 @@ class MainScreenFragment :
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        binding.dynamicBackground.onResume()
+        enterFullScreen()
+        loadImageListAsync(false)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        binding.dynamicBackground.onPause()
+    }
+
     private fun setupDynamicBackground() {
         with(binding.dynamicBackground) {
             debugFlags = GLSurfaceView.DEBUG_CHECK_GL_ERROR or GLSurfaceView.DEBUG_LOG_GL_CALLS
             setEGLContextClientVersion(2)
             setEGLConfigChooser(8, 8, 8, 8, 16, 0)
+            holder.setFormat(PixelFormat.RGBA_8888)
+            setZOrderOnTop(true)
+            preserveEGLContextOnPause = true
 
             /*
             setEGLContextFactory(

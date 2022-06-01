@@ -45,24 +45,25 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         val U_COLOR = floatArrayOf(1F, 0F, 0F, 1F)
 
         const val V_SHADER_SRC =
-            """#version 100
+            """
             attribute vec2 aPos;
             // attribute vec2 vTex;
             // varying vec2 fTex;
             void main() {
                 // fTex = vTex;
-                gl_Position = vec4(aPos, 0, 1);
+                gl_Position = vec4(0.5, 0.5, 0.5, 1);
+                gl_PointSize = 32.0;
             }
             """
 
         const val F_SHADER_SRC =
-            """#version 100
+            """
             precision mediump float;
             // uniform vec4 uColor;
             // varying vec2 fTex;
             void main() {
                 // gl_FragColor = uColor;
-                gl_FragColor = vec4(0, 1, 0, 1);
+                gl_FragColor = vec4(1, 1, 0, 1);
             }
             """
     }
@@ -130,7 +131,9 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         logIfNotEmpty("PR", api.glGetProgramInfoLog(program).ck())
         //</editor-fold>
 
-        aPosLoc = api.glGetAttribLocation(program, "aPos").ck()
+        api.glUseProgram(program).ck()
+        // api.glEnableVertexAttribArray(0).ck()
+        // aPosLoc = api.glGetAttribLocation(program, "aPos").ck()
         Log.d("IR(gles)", "aPosLoc: $aPosLoc")
         // uColorLoc.ck()
     }
@@ -145,12 +148,16 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         api.glEnableVertexAttribArray(aPosLoc).ck()
         // api.glEnableVertexAttribArray(1).ck()
 
-        api.glVertexAttribPointer(aPosLoc, 2, api.GL_FLOAT, false, 0, posBuff).ck()
+        api.glBindAttribLocation(program, aPosLoc, "aPos").ck()
+        api.glVertexAttribPointer(aPosLoc, 2, api.GL_FLOAT, false, 4 * 2, posBuff).ck()
+        posBuff.position(0)
         // api.glVertexAttribPointer(1, 2, api.GL_FLOAT, false, 2 * 4, texBuff).ck()
 
         // api.glUniform4fv(uColorLoc, 1, U_COLOR, 0).ck()
 
-        api.glDrawElements(api.GL_TRIANGLES, quadDrawOrder.size, api.GL_UNSIGNED_SHORT, drawBuff).ck()
+        // api.glDrawElements(api.GL_TRIANGLES, quadDrawOrder.size, api.GL_UNSIGNED_SHORT, drawBuff).ck()
+        api.glDrawArrays(api.GL_TRIANGLES, 0, 3).ck()
+        api.glDrawArrays(api.GL_POINTS, 0, 3).ck()
 
         // api.glDisableVertexAttribArray(1).ck()
         api.glDisableVertexAttribArray(aPosLoc).ck()
@@ -164,6 +171,10 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         // Called once to set up the view's OpenGL ES environment.
         Log.d("IR(gles)", "Create()")
 
+        api.glGetString(GL10.GL_VERSION).also {
+            Log.w("IR(gles)", "Version: $it")
+        }
+
         create()
     }
 
@@ -171,8 +182,8 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         //  Called for each redraw of the view.
         Log.d("IR(gles)", "Draw()")
 
-        api.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
-        api.glClear(api.GL_COLOR_BUFFER_BIT)
+        api.glClearColor(0.0f, 0.0f, 1.0f, 1.0f)
+        api.glClear(api.GL_COLOR_BUFFER_BIT or api.GL_DEPTH_BUFFER_BIT)
         draw()
     }
 
