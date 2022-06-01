@@ -38,7 +38,7 @@ class MainScreenViewModel @Inject constructor(
         hasLoadedFilters = false
 
         viewModelScope.launch(Dispatchers.IO) {
-            delay(5000L)
+            delay(2000L)
             query.use { cursor ->
 
                 val bucketsMap = mutableMapOf(

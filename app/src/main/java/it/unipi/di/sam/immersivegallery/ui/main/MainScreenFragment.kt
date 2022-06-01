@@ -31,13 +31,14 @@ class MainScreenFragment :
     // TODO: Add colors
     // TODO: Add string
     // TODO: Add dimens
+    // TODO: Gray => White (UI)
 
     // TODO: Fullscreen support (w-landscape => custom layout for landscape)
     // TODO: Catch intent for opening images
     // TODO: Merge cursors to gen INTERNAL/EXTERNAL queries ?
     // TODO: Tutorial (first time)
     // TODO: Auto "next"
-    // TODO: Carousel background
+    // TODO: Carousel background (adjust to transparent when with => placeholder !)
 
     // (?)
     // TODO: OnResume (reload filters ?)
@@ -418,6 +419,8 @@ class MainScreenFragment :
             imagesListPlaceholder.isVisible = isEmpty
             imagesListText.editText!!.setText(count.toString())
         }
+
+        updateDetails(null)
     }
 
     private val gestureListener = object : GestureDetector.SimpleOnGestureListener() {

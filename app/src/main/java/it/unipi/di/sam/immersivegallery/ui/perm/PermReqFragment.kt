@@ -46,7 +46,7 @@ class PermReqFragment :
         }
 
         lifecycleScope.launch {
-            delay(500L)
+            delay(1000L)
             (requireActivity().supportFragmentManager
                 .findFragmentById(R.id.root_fragment_container) as NavHostFragment)
                 .navController
@@ -81,7 +81,7 @@ class PermReqFragment :
             }
 
         lifecycleScope.launch {
-            delay(3000L)
+            delay(2000L)
             launcher.launch(permissions)
         }
     }
