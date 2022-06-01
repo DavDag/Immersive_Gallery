@@ -35,7 +35,6 @@ class MainScreenFragment :
     // TODO: Fullscreen support (w-landscape => custom layout for landscape)
 
     // (High Priority)
-    // TODO: Fullscreen support (portrait)
     // TODO: Carousel background (adjust to transparent when with => placeholder !)
     // TODO: Catch intent for opening images
 

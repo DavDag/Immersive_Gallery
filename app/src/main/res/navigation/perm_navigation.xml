@@ -2,7 +2,7 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/loading_navigation"
+    android:id="@+id/perm_navigation"
     app:startDestination="@id/PermReqFragment">
 
 
@@ -10,6 +10,13 @@
         android:id="@+id/PermReqFragment"
         android:name="it.unipi.di.sam.immersivegallery.ui.perm.PermReqFragment"
         tools:layout="@layout/fragment_perm_req">
+
+        <action
+            android:id="@+id/action_PermReqFragment_to_MainNavigation"
+            app:destination="@id/main_navigation"
+            app:popUpTo="@id/PermReqFragment"
+            app:popUpToInclusive="true"
+            />
 
     </fragment>
 

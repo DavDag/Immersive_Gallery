@@ -6,9 +6,8 @@ import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
-import it.unipi.di.sam.immersivegallery.R
 import it.unipi.di.sam.immersivegallery.common.BaseFragment
 import it.unipi.di.sam.immersivegallery.databinding.FragmentPermReqBinding
 import kotlinx.coroutines.delay
@@ -40,17 +39,17 @@ class PermReqFragment :
         }
     }
 
-    private fun inflateNavGraph() {
+    private fun navigateToHome() {
         with(binding) {
             loadingTitle.editText!!.setText("Loading App...")
         }
 
         lifecycleScope.launch {
             delay(1000L)
-            (requireActivity().supportFragmentManager
-                .findFragmentById(R.id.root_fragment_container) as NavHostFragment)
-                .navController
-                .setGraph(R.navigation.app_navigation)
+
+            findNavController().navigate(
+                PermReqFragmentDirections.actionPermReqFragmentToMainNavigation()
+            )
         }
     }
 
@@ -64,7 +63,7 @@ class PermReqFragment :
 
     private fun sendPermissionRequest(permissions: Array<String>) {
         if (permissions.isEmpty()) {
-            inflateNavGraph()
+            navigateToHome()
             return
         }
 
@@ -76,7 +75,7 @@ class PermReqFragment :
                 if (notGranted) {
                     closeApplicationGracefullyForDeniedPermissions()
                 } else {
-                    inflateNavGraph()
+                    navigateToHome()
                 }
             }
 
