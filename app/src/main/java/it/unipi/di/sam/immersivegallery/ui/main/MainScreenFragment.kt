@@ -2,6 +2,7 @@ package it.unipi.di.sam.immersivegallery.ui.main
 
 import android.content.Intent
 import android.icu.text.SimpleDateFormat
+import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.InputType
@@ -205,6 +206,7 @@ class MainScreenFragment :
             updateFiltersState(true)
             updateDetailsState(true)
         }
+        setupDynamicBackground()
     }
 
     private fun setupObservers() {
@@ -621,6 +623,14 @@ class MainScreenFragment :
             }
 
             return true
+        }
+    }
+
+    private fun setupDynamicBackground() {
+        with(binding.dynamicBackground) {
+            setEGLContextClientVersion(2)
+            setRenderer(ImmersiveRenderer())
+            renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
         }
     }
 }
