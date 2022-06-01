@@ -8,8 +8,7 @@
     <fragment
         android:id="@+id/MainScreenFragment"
         android:name="it.unipi.di.sam.immersivegallery.ui.main.MainScreenFragment"
-        tools:layout="@layout/fragment_main_screen"
-        >
+        tools:layout="@layout/fragment_main_screen">
 
     </fragment>
 

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/loading_navigation"
+    app:startDestination="@id/PermReqFragment">
+
+
+    <fragment
+        android:id="@+id/PermReqFragment"
+        android:name="it.unipi.di.sam.immersivegallery.ui.perm.PermReqFragment"
+        tools:layout="@layout/fragment_perm_req">
+
+    </fragment>
+
+</navigation>

@@ -303,10 +303,10 @@ class MainScreenFragment :
             null,
         )
 
+        // Update UI
+        updateResults(query.count)
+
         // Update cursor
-        val isEmpty = (query.count == 0)
-        binding.imagesListPlaceholder.isVisible = isEmpty
-        binding.imagesListText.editText!!.setText(query.count.toString())
         val position = binding.imagesList.adapter!!.replaceCursor(query, resetPosition)
         binding.imagesList.scrollToPosition(position)
     }
@@ -378,6 +378,7 @@ class MainScreenFragment :
 
     private fun updateFiltersState(loading: Boolean) {
         if (loading) {
+            binding.imagesListPlaceholderText.editText!!.setText("Loading filters...")
             binding.filtersContainer.children.forEach { child ->
                 if (child is TextInputLayout) {
                     child.editText!!.setText("loading...")
@@ -393,6 +394,16 @@ class MainScreenFragment :
                     child.editText!!.setText("loading...")
                 }
             }
+        }
+    }
+
+    private fun updateResults(count: Int) {
+        val isEmpty = (count == 0)
+
+        with(binding) {
+            imagesListPlaceholderText.editText!!.setText("No results available :(")
+            imagesListPlaceholder.isVisible = isEmpty
+            imagesListText.editText!!.setText(count.toString())
         }
     }
 
