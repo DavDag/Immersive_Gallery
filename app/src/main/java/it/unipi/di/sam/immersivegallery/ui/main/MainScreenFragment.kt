@@ -628,7 +628,9 @@ class MainScreenFragment :
 
     private fun setupDynamicBackground() {
         with(binding.dynamicBackground) {
+            debugFlags = GLSurfaceView.DEBUG_CHECK_GL_ERROR or GLSurfaceView.DEBUG_LOG_GL_CALLS
             setEGLContextClientVersion(2)
+            setEGLConfigChooser(8, 8, 8, 8, 16, 0)
             setRenderer(ImmersiveRenderer())
             renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
         }

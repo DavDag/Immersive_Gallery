@@ -45,8 +45,7 @@ class PermReqFragment :
         }
 
         lifecycleScope.launch {
-            delay(1000L)
-
+            // delay(1000L)
             findNavController().navigate(
                 PermReqFragmentDirections.actionPermReqFragmentToMainNavigation()
             )
@@ -80,7 +79,7 @@ class PermReqFragment :
             }
 
         lifecycleScope.launch {
-            delay(2000L)
+            // delay(2000L)
             launcher.launch(permissions)
         }
     }
