@@ -38,15 +38,12 @@ class MainScreenFragment :
     // TODO: Tutorial (first time)
     // TODO: Auto "next"
     // TODO: Carousel background
-    // TODO: Size filters
-    // TODO: Loading screen before entering nav graph
 
     // (?)
     // TODO: OnResume (reload filters ?)
     // TODO: Update ui in loading mode
     // TODO: Create data folders (by size, by ratio, ecc)
     // TODO: Query to find old position (cause may change if user remove inner elements) (id changes ?)
-    // TODO: "No query results" => "loading" (when loading)
 
     companion object {
         const val V_SLIDE_TRIGGER = 0.75F // Percentage
@@ -282,6 +279,22 @@ class MainScreenFragment :
             ?.let { bucket ->
                 selection.append(" AND ${MediaStore.Images.Media.BUCKET_ID} = ?")
                 selectionArgs.add(bucket.bucketId.toString())
+            }
+
+        // Check if user has a size (min) specified
+        filters.sizeMin
+            .takeIf { size -> size.bytes != ZERO_SIZE_FILTER.bytes }
+            ?.let { size ->
+                selection.append(" AND ${MediaStore.Images.Media.SIZE} >= ?")
+                selectionArgs.add(size.bytes.toString())
+            }
+
+        // Check if user has a size (max) specified
+        filters.sizeMax
+            .takeIf { size -> size.bytes != INF_SIZE_FILTER.bytes }
+            ?.let { size ->
+                selection.append(" AND ${MediaStore.Images.Media.SIZE} <= ?")
+                selectionArgs.add(size.bytes.toString())
             }
 
         // Check if user has a mime type specified

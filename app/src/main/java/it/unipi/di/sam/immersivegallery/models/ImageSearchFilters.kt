@@ -11,7 +11,7 @@ data class ImageSearchFilterBucket(
 
 @Serializable
 data class ImageSearchFilterSize(
-    val size: Int,
+    val bytes: Int,
     val displayName: String,
 )
 
@@ -42,12 +42,12 @@ val ALL_BUCKET_FILTER = ImageSearchFilterBucket(
 )
 
 val ZERO_SIZE_FILTER = ImageSearchFilterSize(
-    size = 0,
+    bytes = 0,
     displayName = "Zero",
 )
 
 val INF_SIZE_FILTER = ImageSearchFilterSize(
-    size = Int.MAX_VALUE,
+    bytes = Int.MAX_VALUE,
     displayName = "Inf",
 )
 
