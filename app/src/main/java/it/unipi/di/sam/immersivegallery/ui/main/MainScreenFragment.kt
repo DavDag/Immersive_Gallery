@@ -4,6 +4,8 @@ import android.content.Intent
 import android.icu.text.SimpleDateFormat
 import android.opengl.GLSurfaceView
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.text.InputType
 import android.view.GestureDetector
@@ -22,6 +24,10 @@ import it.unipi.di.sam.immersivegallery.R
 import it.unipi.di.sam.immersivegallery.common.*
 import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
 import it.unipi.di.sam.immersivegallery.models.*
+import javax.microedition.khronos.egl.EGL10
+import javax.microedition.khronos.egl.EGLConfig
+import javax.microedition.khronos.egl.EGLContext
+import javax.microedition.khronos.egl.EGLDisplay
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -631,6 +637,38 @@ class MainScreenFragment :
             debugFlags = GLSurfaceView.DEBUG_CHECK_GL_ERROR or GLSurfaceView.DEBUG_LOG_GL_CALLS
             setEGLContextClientVersion(2)
             setEGLConfigChooser(8, 8, 8, 8, 16, 0)
+
+            /*
+            setEGLContextFactory(
+                object : GLSurfaceView.EGLContextFactory {
+                    override fun createContext(
+                        egl: EGL10,
+                        display: EGLDisplay,
+                        config: EGLConfig
+                    ): EGLContext =
+                        egl.eglCreateContext(
+                            display,
+                            config,
+                            EGL10.EGL_NO_CONTEXT,
+                            intArrayOf(
+                                0x3098,
+                                2,
+                                EGL10.EGL_NONE
+                            )
+                        )
+
+                    override fun destroyContext(
+                        egl: EGL10,
+                        display: EGLDisplay,
+                        context: EGLContext
+                    ) {
+                        egl.eglDestroyContext(display, context)
+                    }
+
+                }
+            )
+            */
+
             setRenderer(ImmersiveRenderer())
             renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
         }

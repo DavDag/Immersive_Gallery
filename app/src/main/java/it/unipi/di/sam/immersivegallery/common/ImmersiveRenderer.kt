@@ -45,18 +45,18 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         val U_COLOR = floatArrayOf(1F, 0F, 0F, 1F)
 
         const val V_SHADER_SRC =
-            """#version 110
-            attribute vec2 vPos;
+            """#version 100
+            attribute vec2 aPos;
             // attribute vec2 vTex;
             // varying vec2 fTex;
             void main() {
                 // fTex = vTex;
-                gl_Position = vec4(vPos, 0, 1);
+                gl_Position = vec4(aPos, 0, 1);
             }
             """
 
         const val F_SHADER_SRC =
-            """#version 110
+            """#version 100
             precision mediump float;
             // uniform vec4 uColor;
             // varying vec2 fTex;
@@ -102,40 +102,36 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         }
     }
 
-    private val vshader by lazy { api.glCreateShader(api.GL_VERTEX_SHADER) }
-    private val fshader by lazy { api.glCreateShader(api.GL_FRAGMENT_SHADER) }
-    private val program by lazy { api.glCreateProgram() }
-
-    private val vPosLoc by lazy { api.glGetAttribLocation(program, "vPos") }
-    private val uColorLoc by lazy { api.glGetUniformLocation(program, "uColor") }
+    private var program = 0
+    private var aPosLoc = 0
 
     // =============================================================================================
 
     private fun create() {
-        vshader.ck()
-        fshader.ck()
-        program.ck()
-
         //<editor-fold desc="VERTEX SHADER">
+        val vshader = api.glCreateShader(api.GL_VERTEX_SHADER).ck()
         api.glShaderSource(vshader, V_SHADER_SRC).ck()
         api.glCompileShader(vshader).ck()
         logIfNotEmpty("VS", api.glGetShaderInfoLog(vshader).ck())
         //</editor-fold>
 
         //<editor-fold desc="FRAGMENT SHADER">
+        val fshader = api.glCreateShader(api.GL_FRAGMENT_SHADER).ck()
         api.glShaderSource(fshader, F_SHADER_SRC).ck()
         api.glCompileShader(vshader).ck()
         logIfNotEmpty("FS", api.glGetShaderInfoLog(fshader).ck())
         //</editor-fold>
 
         //<editor-fold desc="PROGRAM">
+        program = api.glCreateProgram().ck()
         api.glAttachShader(program, vshader).ck()
         api.glAttachShader(program, fshader).ck()
         api.glLinkProgram(program).ck()
         logIfNotEmpty("PR", api.glGetProgramInfoLog(program).ck())
         //</editor-fold>
 
-        vPosLoc.ck()
+        aPosLoc = api.glGetAttribLocation(program, "aPos").ck()
+        Log.d("IR(gles)", "aPosLoc: $aPosLoc")
         // uColorLoc.ck()
     }
 
@@ -146,10 +142,10 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     private fun draw() {
         api.glUseProgram(program).ck()
 
-        api.glEnableVertexAttribArray(vPosLoc).ck()
+        api.glEnableVertexAttribArray(aPosLoc).ck()
         // api.glEnableVertexAttribArray(1).ck()
 
-        api.glVertexAttribPointer(vPosLoc, 2, api.GL_FLOAT, false, 2 * 4, posBuff).ck()
+        api.glVertexAttribPointer(aPosLoc, 2, api.GL_FLOAT, false, 0, posBuff).ck()
         // api.glVertexAttribPointer(1, 2, api.GL_FLOAT, false, 2 * 4, texBuff).ck()
 
         // api.glUniform4fv(uColorLoc, 1, U_COLOR, 0).ck()
@@ -157,7 +153,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         api.glDrawElements(api.GL_TRIANGLES, quadDrawOrder.size, api.GL_UNSIGNED_SHORT, drawBuff).ck()
 
         // api.glDisableVertexAttribArray(1).ck()
-        api.glDisableVertexAttribArray(vPosLoc).ck()
+        api.glDisableVertexAttribArray(aPosLoc).ck()
 
         api.glUseProgram(0).ck()
     }
@@ -166,12 +162,14 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
 
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
         // Called once to set up the view's OpenGL ES environment.
+        Log.d("IR(gles)", "Create()")
 
         create()
     }
 
     override fun onDrawFrame(unused: GL10) {
         //  Called for each redraw of the view.
+        Log.d("IR(gles)", "Draw()")
 
         api.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
         api.glClear(api.GL_COLOR_BUFFER_BIT)
@@ -181,6 +179,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
         // Called if the geometry of the view changes,
         // for example when the device's screen orientation changes.
+        Log.d("IR(gles)", "Init($width, $height)")
 
         init(width, height)
     }

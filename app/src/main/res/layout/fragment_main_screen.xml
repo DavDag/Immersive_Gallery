@@ -6,11 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".ui.main.MainScreenFragment">
 
-    <android.opengl.GLSurfaceView
-        android:id="@+id/dynamic_background"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
     <!--
     Filters
     -->
@@ -459,5 +454,11 @@
             app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <android.opengl.GLSurfaceView
+        android:id="@+id/dynamic_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:elevation="4dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
