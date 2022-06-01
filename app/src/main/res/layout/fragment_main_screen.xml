@@ -7,6 +7,14 @@
     tools:context=".ui.main.MainScreenFragment">
 
     <!--
+    Dynamic background
+    -->
+    <it.unipi.di.sam.immersivegallery.common.ImmersiveBackground
+        android:id="@+id/dynamic_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!--
     Filters
     -->
     <androidx.constraintlayout.widget.ConstraintLayout

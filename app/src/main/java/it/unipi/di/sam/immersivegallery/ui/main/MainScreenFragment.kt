@@ -205,6 +205,7 @@ class MainScreenFragment :
             updateFiltersState(true)
             updateDetailsState(true)
         }
+        setupDynamicBackground()
     }
 
     private fun setupObservers() {
@@ -622,5 +623,9 @@ class MainScreenFragment :
 
             return true
         }
+    }
+
+    private fun setupDynamicBackground() {
+        // (?)
     }
 }
