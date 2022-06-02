@@ -169,6 +169,14 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!--
+    Dynamic background
+    -->
+    <android.opengl.GLSurfaceView
+        android:id="@+id/dynamic_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!--
     Placeholder
     -->
     <LinearLayout
@@ -454,11 +462,5 @@
             app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <android.opengl.GLSurfaceView
-        android:id="@+id/dynamic_background"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:elevation="0dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,7 +1,6 @@
 package it.unipi.di.sam.immersivegallery.ui.main
 
 import android.content.Intent
-import android.graphics.PixelFormat
 import android.icu.text.SimpleDateFormat
 import android.opengl.GLSurfaceView
 import android.os.Bundle
@@ -113,6 +112,8 @@ class MainScreenFragment :
         binding.detailsContainer.animate().translationY(0F)
     }
 
+    private val renderer = ImmersiveRenderer()
+
     override fun setup(savedInstanceState: Bundle?) {
         setupUI()
         setupObservers()
@@ -120,6 +121,7 @@ class MainScreenFragment :
     }
 
     private fun setupUI() {
+        setupDynamicBackground()
         with(binding) {
             // Filters
             filtersContainer.children.forEach { child ->
@@ -201,7 +203,6 @@ class MainScreenFragment :
             updateFiltersState(true)
             updateDetailsState(true)
         }
-        setupDynamicBackground()
     }
 
     private fun setupObservers() {
@@ -363,6 +364,10 @@ class MainScreenFragment :
     }
 
     private fun updateDetails(data: ImageData?) {
+        val bitmap = data?.uri?.toBitmap(requireActivity().contentResolver)
+        renderer.updateImage(bitmap)
+        binding.dynamicBackground.requestRender()
+
         with(binding) {
             detailsUri.editText!!.setText(data?.uri.toString())
             detailsWidth.editText!!.setText(data?.width.toString())
@@ -641,7 +646,7 @@ class MainScreenFragment :
             // holder.setFormat(PixelFormat.RGBA_8888)
             // setZOrderOnTop(true)
             // preserveEGLContextOnPause = true
-            setRenderer(ImmersiveRenderer())
+            setRenderer(renderer)
             renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
         }
     }

@@ -1,7 +1,9 @@
 package it.unipi.di.sam.immersivegallery.common
 
+import android.graphics.Bitmap
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
+import android.opengl.GLUtils
 import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -18,7 +20,8 @@ private fun <T> T.ck(): T {
     val error = api.glGetError()
     if (error != api.GL_NO_ERROR) {
         val callerLine = Thread.currentThread().stackTrace[4].lineNumber
-        Log.e("GL(err)", "At $callerLine: $error")
+        val message = GLUtils.getEGLErrorString(error)
+        Log.e("GL(err)", "At line $callerLine with error $error => $message")
         return this
     }
     return this
@@ -44,7 +47,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
             attribute vec2 aTex;
             varying vec2 vTex;
             void main() {
-                vTex = aTex;
+                vTex = vec2(aTex.x, 1.0 - aTex.y);
                 gl_Position = aPos;
             }
             """
@@ -53,8 +56,11 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
             """
             precision mediump float;
             varying vec2 vTex;
+            uniform sampler2D uTexture;
             void main() {
-                gl_FragColor = vec4(vTex.xy, 0, 1);
+                vec3 color = texture2D(uTexture, vTex).rgb;
+                gl_FragColor = vec4(color, 1);
+                // gl_FragColor = vec4(vTex, 0, 1);
             }
             """
 
@@ -96,9 +102,15 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         }
     }
 
-    private var program = 0
+    private val program by lazy { api.glCreateProgram().ck() }
     private val aPosLoc by lazy { api.glGetAttribLocation(program, "aPos") }
     private val aTexLoc by lazy { api.glGetAttribLocation(program, "aTex") }
+
+    private var texture = 0
+    private val uTextureLoc by lazy { api.glGetUniformLocation(program, "uTexture") }
+
+    private val defBitmap by lazy { Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) }
+    private var _bitmapToLoad: Bitmap? = null
 
     // =============================================================================================
 
@@ -116,11 +128,25 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         logIfNotEmpty("FS", api.glGetShaderInfoLog(fshader).ck())
 
         // Create program
-        program = api.glCreateProgram().ck()
         api.glAttachShader(program, vshader).ck()
         api.glAttachShader(program, fshader).ck()
         api.glLinkProgram(program).ck()
         logIfNotEmpty("PR", api.glGetProgramInfoLog(program).ck())
+
+        // Create texture
+        val rawIntBuff = intArrayOf(0)
+        api.glGenTextures(1, rawIntBuff, 0).ck()
+        texture = rawIntBuff[0]
+
+        // Update texture parameters
+        api.glActiveTexture(api.GL_TEXTURE0 + 0).ck()
+        api.glBindTexture(api.GL_TEXTURE_2D, texture).ck()
+        api.glTexParameteri(api.GL_TEXTURE_2D, api.GL_TEXTURE_MIN_FILTER, api.GL_LINEAR).ck()
+        api.glTexParameteri(api.GL_TEXTURE_2D, api.GL_TEXTURE_MAG_FILTER, api.GL_LINEAR).ck()
+        api.glTexParameteri(api.GL_TEXTURE_2D, api.GL_TEXTURE_WRAP_S, api.GL_CLAMP_TO_EDGE).ck()
+        api.glTexParameteri(api.GL_TEXTURE_2D, api.GL_TEXTURE_WRAP_T, api.GL_CLAMP_TO_EDGE).ck()
+        GLUtils.texImage2D(api.GL_TEXTURE_2D, 0, defBitmap, 0).ck()
+        api.glBindTexture(api.GL_TEXTURE_2D, 0).ck()
     }
 
     private fun init(w: Int, h: Int) {
@@ -130,14 +156,17 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
 
     private fun draw() {
         api.glUseProgram(program).ck()
+        api.glUniform1i(uTextureLoc, 0).ck()
+        api.glActiveTexture(api.GL_TEXTURE0 + 0).ck()
+        api.glBindTexture(api.GL_TEXTURE_2D, texture).ck()
         api.glEnableVertexAttribArray(aPosLoc).ck()
         api.glEnableVertexAttribArray(aTexLoc).ck()
         api.glVertexAttribPointer(aPosLoc, 2, api.GL_FLOAT, false, 4 * 2, posBuff).ck()
         api.glVertexAttribPointer(aTexLoc, 2, api.GL_FLOAT, false, 4 * 2, texBuff).ck()
-        // api.glUniform4fv(uColorLoc, 1, U_COLOR, 0)
         api.glDrawElements(api.GL_TRIANGLES, drawOrder.size, api.GL_UNSIGNED_SHORT, drawBuff).ck()
         api.glDisableVertexAttribArray(aTexLoc).ck()
         api.glDisableVertexAttribArray(aPosLoc).ck()
+        api.glBindTexture(api.GL_TEXTURE_2D, 0).ck()
         api.glUseProgram(0).ck()
     }
 
@@ -162,6 +191,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         api.glClearColor(0F, 0F, 0F, 1F).ck()
         api.glClear(api.GL_COLOR_BUFFER_BIT).ck()
 
+        loadBitmapIfDirty()
         draw()
     }
 
@@ -171,6 +201,25 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         Log.d(LOG_TAG, "Init($width, $height)")
 
         init(width, height)
+    }
+
+    // =============================================================================================
+
+    private fun loadBitmapIfDirty() {
+        if (_bitmapToLoad == null) return
+        Log.d(LOG_TAG, "Bitmap reloaded")
+
+        api.glActiveTexture(api.GL_TEXTURE0 + 0).ck()
+        api.glBindTexture(api.GL_TEXTURE_2D, texture).ck()
+        GLUtils.texImage2D(api.GL_TEXTURE_2D, 0, _bitmapToLoad, 0).ck()
+        api.glBindTexture(api.GL_TEXTURE_2D, 0).ck()
+
+        _bitmapToLoad!!.recycle()
+        _bitmapToLoad = null
+    }
+
+    public fun updateImage(bitmap: Bitmap?) {
+        _bitmapToLoad = bitmap
     }
 
 }
