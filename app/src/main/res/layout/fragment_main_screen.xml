@@ -459,6 +459,6 @@
         android:id="@+id/dynamic_background"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:elevation="4dp" />
+        android:elevation="0dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

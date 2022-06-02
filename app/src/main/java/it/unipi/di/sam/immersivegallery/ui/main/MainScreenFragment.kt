@@ -638,41 +638,9 @@ class MainScreenFragment :
             debugFlags = GLSurfaceView.DEBUG_CHECK_GL_ERROR or GLSurfaceView.DEBUG_LOG_GL_CALLS
             setEGLContextClientVersion(2)
             setEGLConfigChooser(8, 8, 8, 8, 16, 0)
-            holder.setFormat(PixelFormat.RGBA_8888)
-            setZOrderOnTop(true)
-            preserveEGLContextOnPause = true
-
-            /*
-            setEGLContextFactory(
-                object : GLSurfaceView.EGLContextFactory {
-                    override fun createContext(
-                        egl: EGL10,
-                        display: EGLDisplay,
-                        config: EGLConfig
-                    ): EGLContext =
-                        egl.eglCreateContext(
-                            display,
-                            config,
-                            EGL10.EGL_NO_CONTEXT,
-                            intArrayOf(
-                                0x3098,
-                                2,
-                                EGL10.EGL_NONE
-                            )
-                        )
-
-                    override fun destroyContext(
-                        egl: EGL10,
-                        display: EGLDisplay,
-                        context: EGLContext
-                    ) {
-                        egl.eglDestroyContext(display, context)
-                    }
-
-                }
-            )
-            */
-
+            // holder.setFormat(PixelFormat.RGBA_8888)
+            // setZOrderOnTop(true)
+            // preserveEGLContextOnPause = true
             setRenderer(ImmersiveRenderer())
             renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
         }
