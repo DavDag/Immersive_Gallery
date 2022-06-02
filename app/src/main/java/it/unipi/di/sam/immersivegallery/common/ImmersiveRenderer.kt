@@ -22,14 +22,14 @@ private fun <T> T.ck(): T {
         val callerLine = Thread.currentThread().stackTrace[4].lineNumber
         val message = GLUtils.getEGLErrorString(error)
         Log.e("GL(err)", "At line $callerLine with error $error => $message")
-        return this
+        // throw Exception("GL_ERROR")
+        return this.ck()
     }
     return this
 }
 
 private fun logIfNotEmpty(tag: String, msg: String) =
     msg.takeIf(String::isNotBlank)?.run { Log.e(tag, this) }
-
 
 // =================================================================================================
 
@@ -57,10 +57,12 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
             precision mediump float;
             varying vec2 vTex;
             uniform sampler2D uTexture;
+            uniform float uTime;
             void main() {
+                vec2 tex = vTex;
+                tex.x += uTime / 1000.0;
                 vec3 color = texture2D(uTexture, vTex).rgb;
                 gl_FragColor = vec4(color, 1);
-                // gl_FragColor = vec4(vTex, 0, 1);
             }
             """
 
@@ -106,11 +108,13 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     private val aPosLoc by lazy { api.glGetAttribLocation(program, "aPos") }
     private val aTexLoc by lazy { api.glGetAttribLocation(program, "aTex") }
 
-    private var texture = 0
     private val uTextureLoc by lazy { api.glGetUniformLocation(program, "uTexture") }
-
+    private var texture = 0
     private val defBitmap by lazy { Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) }
     private var _bitmapToLoad: Bitmap? = null
+
+    private val uTimeLoc by lazy { api.glGetUniformLocation(program, "uTime") }
+    private val timeStarted by lazy { System.currentTimeMillis() }
 
     // =============================================================================================
 
@@ -155,10 +159,12 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     }
 
     private fun draw() {
+        val timePassed = (System.currentTimeMillis() - timeStarted).toFloat().div(1000F)
         api.glUseProgram(program).ck()
         api.glUniform1i(uTextureLoc, 0).ck()
         api.glActiveTexture(api.GL_TEXTURE0 + 0).ck()
         api.glBindTexture(api.GL_TEXTURE_2D, texture).ck()
+        api.glUniform1f(uTimeLoc, timePassed).ck()
         api.glEnableVertexAttribArray(aPosLoc).ck()
         api.glEnableVertexAttribArray(aTexLoc).ck()
         api.glVertexAttribPointer(aPosLoc, 2, api.GL_FLOAT, false, 4 * 2, posBuff).ck()
@@ -178,7 +184,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
 
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
         // Called once to set up the view's OpenGL ES environment.
-        Log.d(LOG_TAG, "Create()")
+        // Log.d(LOG_TAG, "Create()")
 
         logInfos()
         create()
@@ -186,7 +192,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
 
     override fun onDrawFrame(unused: GL10) {
         //  Called for each redraw of the view.
-        Log.d(LOG_TAG, "Draw()")
+        // Log.d(LOG_TAG, "Draw()")
 
         api.glClearColor(0F, 0F, 0F, 1F).ck()
         api.glClear(api.GL_COLOR_BUFFER_BIT).ck()
@@ -198,7 +204,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
         // Called if the geometry of the view changes,
         // for example when the device's screen orientation changes.
-        Log.d(LOG_TAG, "Init($width, $height)")
+        // Log.d(LOG_TAG, "Init($width, $height)")
 
         init(width, height)
     }
@@ -207,7 +213,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
 
     private fun loadBitmapIfDirty() {
         if (_bitmapToLoad == null) return
-        Log.d(LOG_TAG, "Bitmap reloaded")
+        // Log.d(LOG_TAG, "Bitmap reloaded")
 
         api.glActiveTexture(api.GL_TEXTURE0 + 0).ck()
         api.glBindTexture(api.GL_TEXTURE_2D, texture).ck()

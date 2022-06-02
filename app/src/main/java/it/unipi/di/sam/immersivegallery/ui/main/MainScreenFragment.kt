@@ -366,7 +366,7 @@ class MainScreenFragment :
     private fun updateDetails(data: ImageData?) {
         val bitmap = data?.uri?.toBitmap(requireActivity().contentResolver)
         renderer.updateImage(bitmap)
-        binding.dynamicBackground.requestRender()
+        // binding.dynamicBackground.requestRender()
 
         with(binding) {
             detailsUri.editText!!.setText(data?.uri.toString())
@@ -640,14 +640,18 @@ class MainScreenFragment :
 
     private fun setupDynamicBackground() {
         with(binding.dynamicBackground) {
-            debugFlags = GLSurfaceView.DEBUG_CHECK_GL_ERROR or GLSurfaceView.DEBUG_LOG_GL_CALLS
             setEGLContextClientVersion(2)
             setEGLConfigChooser(8, 8, 8, 8, 16, 0)
-            // holder.setFormat(PixelFormat.RGBA_8888)
-            // setZOrderOnTop(true)
-            // preserveEGLContextOnPause = true
             setRenderer(renderer)
-            renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
+
+            // https://developer.android.com/reference/android/opengl/GLSurfaceView#setDebugFlags(int)
+            debugFlags = GLSurfaceView.DEBUG_CHECK_GL_ERROR or GLSurfaceView.DEBUG_LOG_GL_CALLS
+
+            // https://developer.android.com/reference/android/opengl/GLSurfaceView#setRenderMode(int)
+            renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
+
+            // https://developer.android.com/reference/android/opengl/GLSurfaceView#setPreserveEGLContextOnPause(boolean)
+            preserveEGLContextOnPause = true
         }
     }
 }
