@@ -34,6 +34,7 @@ class MainScreenFragment :
     // TODO: Add dimens
     // TODO: Gray => White (UI)
     // TODO: Fullscreen support (w-landscape => custom layout for landscape)
+    // TODO: App Xiaomi fullscreen bottom ui keep showing back
 
     // (High Priority)
     // TODO: Carousel background (adjust to transparent when with => placeholder !)

@@ -56,12 +56,14 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
             """
             precision mediump float;
             varying vec2 vTex;
+            uniform vec2 uResolution;
             uniform sampler2D uTexture;
             uniform float uTime;
             void main() {
+                vec2 res = uResolution;
                 vec2 tex = vTex;
-                tex.x += uTime / 1000.0;
-                vec3 color = texture2D(uTexture, vTex).rgb;
+                tex.x += uTime / 10.0;
+                vec3 color = texture2D(uTexture, tex).rgb;
                 gl_FragColor = vec4(color, 1);
             }
             """
@@ -108,13 +110,18 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     private val aPosLoc by lazy { api.glGetAttribLocation(program, "aPos") }
     private val aTexLoc by lazy { api.glGetAttribLocation(program, "aTex") }
 
+    private val uResolutionLoc by lazy { api.glGetUniformLocation(program, "uResolution") }
+    private var width = 0
+    private var height = 0
+
     private val uTextureLoc by lazy { api.glGetUniformLocation(program, "uTexture") }
     private var texture = 0
     private val defBitmap by lazy { Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) }
     private var _bitmapToLoad: Bitmap? = null
 
     private val uTimeLoc by lazy { api.glGetUniformLocation(program, "uTime") }
-    private val timeStarted by lazy { System.currentTimeMillis() }
+    private var lastTimeTick = 0L
+    private var timePassed = 0F
 
     // =============================================================================================
 
@@ -156,20 +163,36 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     private fun init(w: Int, h: Int) {
         // Update gl viewport
         api.glViewport(0, 0, w, h).ck()
+
+        // Update resolution
+        width = w
+        height = h
     }
 
-    private fun draw() {
-        val timePassed = (System.currentTimeMillis() - timeStarted).toFloat().div(1000F)
+    private fun draw(dt: Float) {
         api.glUseProgram(program).ck()
+
+        // uResolution
+        api.glUniform2f(uResolutionLoc, width.toFloat(), height.toFloat())
+
+        // uTexture
         api.glUniform1i(uTextureLoc, 0).ck()
         api.glActiveTexture(api.GL_TEXTURE0 + 0).ck()
         api.glBindTexture(api.GL_TEXTURE_2D, texture).ck()
+
+        // uTime
         api.glUniform1f(uTimeLoc, timePassed).ck()
+
+        // Buffer data
         api.glEnableVertexAttribArray(aPosLoc).ck()
         api.glEnableVertexAttribArray(aTexLoc).ck()
         api.glVertexAttribPointer(aPosLoc, 2, api.GL_FLOAT, false, 4 * 2, posBuff).ck()
         api.glVertexAttribPointer(aTexLoc, 2, api.GL_FLOAT, false, 4 * 2, texBuff).ck()
+
+        // Draw
         api.glDrawElements(api.GL_TRIANGLES, drawOrder.size, api.GL_UNSIGNED_SHORT, drawBuff).ck()
+
+        // Clean up
         api.glDisableVertexAttribArray(aTexLoc).ck()
         api.glDisableVertexAttribArray(aPosLoc).ck()
         api.glBindTexture(api.GL_TEXTURE_2D, 0).ck()
@@ -194,11 +217,19 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         //  Called for each redraw of the view.
         // Log.d(LOG_TAG, "Draw()")
 
+        val now = System.currentTimeMillis()
+        val delta = (now - lastTimeTick)
+        lastTimeTick = now
+
+        val dt = (if (delta > 2000) 0F else (delta / 1000F))
+
         api.glClearColor(0F, 0F, 0F, 1F).ck()
         api.glClear(api.GL_COLOR_BUFFER_BIT).ck()
 
         loadBitmapIfDirty()
-        draw()
+        draw(dt)
+
+        timePassed += dt
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
