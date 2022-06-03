@@ -12,7 +12,7 @@ import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
-import kotlin.math.max
+import kotlin.math.min
 
 // =================================================================================================
 
@@ -43,13 +43,13 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     companion object {
         const val V_SHADER_SRC =
             """
-            attribute vec4 aPos;
+            attribute vec2 aPos;
             attribute vec2 aTex;
             uniform mat4 uMatrix;
             varying vec2 vTex;
             void main() {
                 vTex = aTex;
-                gl_Position = uMatrix * aPos;
+                gl_Position = uMatrix * vec4(aPos, 0, 1);
             }
             """
 
@@ -59,9 +59,10 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
             
             #define PI (3.141592)
             #define PI2 (2.0 * PI)
-            #define TIME_SPEED 0.2
-            #define TILE_SIZE 5.0
+            #define TIME_SPEED 0.75
+            #define TILE_COUNT 150.0
             #define VUE_FACTOR 0.5
+            #define MOV_RANGE 2.0
 
             varying vec2 vTex;
             uniform vec2 uResolution;
@@ -74,29 +75,26 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
             }
             
             float fun(float seed) {
-                float x1 = fract(uTime * TIME_SPEED + seed);
-                // float g = pow(sin(x1 * PI2), 2.0);
-                float g = sin(x1 * PI2) / 2.0 + 0.5;
-
-                float x2 = uTime * TIME_SPEED + seed + 123.441;
-                float x3 = uTime * TIME_SPEED + seed + 8753.1249;
-                float q = max(
-                    random(floor(x2)),
-                    random(floor(x3))
-                );
+                float x = uTime * TIME_SPEED + seed;
+            
+                float g = random(floor(x));
+                float gn = random(floor(x + 1.0));
+            
+                float h = fract(x);
+                float q = (1.0 - h) * g + h * gn;
                 
-                float f = (q * g) / 2.0 + 0.5;
-                
-                return pow(f, 3.0);
+                q = q / 2.0 + 0.5;
+    
+                return q;
             }
             
-            vec3 proc(vec2 uv, vec2 size, float fx, float fy) {
-                uv *= size;
+            vec3 proc(vec2 uv, vec2 count, float fx, float fy) {
+                uv *= count;
                 
-                uv.x = mix(floor(uv.x - 1.0), ceil(uv.x + 1.0), fx);
-                uv.y = mix(floor(uv.y - 1.0), ceil(uv.y + 1.0), fy);
+                uv.x = mix(floor(uv.x - MOV_RANGE), ceil(uv.x + MOV_RANGE), fx);
+                uv.y = mix(floor(uv.y - MOV_RANGE), ceil(uv.y + MOV_RANGE), fy);
 
-                uv /= size;
+                uv /= count;
                 
                 vec3 col = texture2D(uTexture, uv).rgb;
                 
@@ -126,25 +124,48 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
             
             void main() {
                 vec2 uv = vTex;
-                vec2 size = vec2(min(uResolution.x, uResolution.y) / TILE_SIZE);
+                vec2 count = vec2(TILE_COUNT);
                 
                 float fx = fun(75.431234);
                 float fy = fun(1264.9441);
                 
-                vec2 t = 1.0 / uResolution.xy;
-                
+                vec2 t = vec2(1.0) / count;
                 vec3 col = vec3(0.0);
-                col += 0.500 * proc(uv, size, fx, fy);
-                col += 0.125 * proc(uv + vec2(+t.x, 0.0), size, fx, fy);
-                col += 0.125 * proc(uv + vec2(-t.x, 0.0), size, fx, fy);
-                col += 0.125 * proc(uv + vec2(0.0, +t.y), size, fx, fy);
-                col += 0.125 * proc(uv + vec2(0.0, -t.y), size, fx, fy);
+                
+                // weights
+                // src: https://datacarpentry.org/image-processing/06-blurring/
+    
+                // Mid
+                col += 0.250 * proc(uv, count, fx, fy);
+                
+                // 4 axis
+                col += 0.110 * proc(uv + vec2(+t.x, 0.0), count, fx, fy);
+                col += 0.110 * proc(uv + vec2(-t.x, 0.0), count, fx, fy);
+                col += 0.110 * proc(uv + vec2(0.0, +t.y), count, fx, fy);
+                col += 0.110 * proc(uv + vec2(0.0, -t.y), count, fx, fy);
+                
+                // 4 corners
+                col += 0.050 * proc(uv + vec2(+t.x, +t.y), count, fx, fy);
+                col += 0.050 * proc(uv + vec2(-t.x, +t.y), count, fx, fy);
+                col += 0.050 * proc(uv + vec2(-t.x, -t.y), count, fx, fy);
+                col += 0.050 * proc(uv + vec2(+t.x, -t.y), count, fx, fy);
+                
+                // 4 axis (dist 2)
+                col += 0.010 * proc(uv + 2.0 * vec2(+t.x, 0.0), count, fx, fy);
+                col += 0.010 * proc(uv + 2.0 * vec2(-t.x, 0.0), count, fx, fy);
+                col += 0.010 * proc(uv + 2.0 * vec2(0.0, +t.y), count, fx, fy);
+                col += 0.010 * proc(uv + 2.0 * vec2(0.0, -t.y), count, fx, fy);
 
                 vec3 hsv = rgb2hsv(col);
                 hsv.z *= VUE_FACTOR;
                 col = hsv2rgb(hsv);
                 
                 gl_FragColor = vec4(col, 1);
+                
+                // uv *= count;
+                // uv = floor(uv);
+                // uv /= count;
+                // gl_FragColor = vec4(uv, 0, 1);
             }
             """
 
@@ -194,11 +215,13 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     private val matrix = FloatArray(16)
 
     private val uResolutionLoc by lazy { api.glGetUniformLocation(program, "uResolution").ck() }
-    private var width = 0
-    private var height = 0
+    private var swidth = 1
+    private var sheight = 1
 
     private val uTextureLoc by lazy { api.glGetUniformLocation(program, "uTexture").ck() }
     private var texture = 0
+    private var twidth = 1
+    private var theight = 1
     private val defBitmap by lazy { Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) }
     private var _bitmapToLoad: Bitmap? = null
 
@@ -248,16 +271,11 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         api.glViewport(0, 0, w, h).ck()
 
         // Update resolution
-        width = w
-        height = h
+        swidth = w
+        sheight = h
 
         // Update matrix
-        Matrix.setIdentityM(matrix, 0)
-        Matrix.scaleM(matrix, 0, 1F, -1F, 1F)
-
-        // Scale matrix to correctly fit bg image
-        val mx = max(w, h).toFloat()
-        Matrix.scaleM(matrix, 0, mx / w, mx / h, 1F)
+        recreateMatrix()
     }
 
     private fun draw(dt: Float) {
@@ -267,7 +285,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         api.glUniformMatrix4fv(uMatrixLoc, 1, false, matrix, 0)
 
         // uResolution
-        api.glUniform2f(uResolutionLoc, width.toFloat(), height.toFloat())
+        api.glUniform2f(uResolutionLoc, swidth.toFloat(), sheight.toFloat())
 
         // uTexture
         api.glUniform1i(uTextureLoc, 0).ck()
@@ -336,9 +354,41 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
 
     // =============================================================================================
 
+    private fun recreateMatrix() {
+        // Reset
+        Matrix.setIdentityM(matrix, 0)
+
+        // Flip Y
+        Matrix.scaleM(matrix, 0, 1F, -1F, 1F)
+
+        if (swidth > sheight) {
+            // Scale matrix to correctly fit screen
+            val sratio = swidth.toFloat() / sheight.toFloat()
+            Matrix.scaleM(matrix, 0, 1F, sratio, 1F)
+
+            // Scale matrix to correctly fit image
+            val tratio = twidth.toFloat() / theight.toFloat()
+            Matrix.scaleM(matrix, 0, 1F, 1F / tratio, 1F)
+        } else {
+            // Scale matrix to correctly fit screen
+            val sratio = sheight.toFloat() / swidth.toFloat()
+            Matrix.scaleM(matrix, 0, sratio, 1F, 1F)
+
+            // Scale matrix to correctly fit image
+            val tratio = theight.toFloat() / twidth.toFloat()
+            Matrix.scaleM(matrix, 0, 1F / tratio, 1F, 1F)
+        }
+    }
+
     private fun loadBitmapIfDirty() {
         if (_bitmapToLoad == null) return
         // Log.d(LOG_TAG, "Bitmap reloaded")
+
+        twidth = _bitmapToLoad!!.width
+        theight = _bitmapToLoad!!.height
+
+        // Update matrix
+        recreateMatrix()
 
         api.glActiveTexture(api.GL_TEXTURE0 + 0).ck()
         api.glBindTexture(api.GL_TEXTURE_2D, texture).ck()
