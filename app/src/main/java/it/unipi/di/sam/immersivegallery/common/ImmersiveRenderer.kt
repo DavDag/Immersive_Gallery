@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.opengl.GLUtils
+import android.opengl.Matrix
 import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -11,6 +12,7 @@ import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.max
 
 // =================================================================================================
 
@@ -22,7 +24,7 @@ private fun <T> T.ck(): T {
         val callerLine = Thread.currentThread().stackTrace[4].lineNumber
         val message = GLUtils.getEGLErrorString(error)
         Log.e("GL(err)", "At line $callerLine with error $error => $message")
-        // throw Exception("GL_ERROR")
+        throw Exception("GL_ERROR")
         return this.ck()
     }
     return this
@@ -39,32 +41,110 @@ private fun logIfNotEmpty(tag: String, msg: String) =
 class ImmersiveRenderer : GLSurfaceView.Renderer {
 
     companion object {
-        val U_COLOR = floatArrayOf(1F, 0F, 0F, 1F)
-
         const val V_SHADER_SRC =
             """
             attribute vec4 aPos;
             attribute vec2 aTex;
+            uniform mat4 uMatrix;
             varying vec2 vTex;
             void main() {
-                vTex = vec2(aTex.x, 1.0 - aTex.y);
-                gl_Position = aPos;
+                vTex = aTex;
+                gl_Position = uMatrix * aPos;
             }
             """
 
         const val F_SHADER_SRC =
             """
             precision mediump float;
+            
+            #define PI (3.141592)
+            #define PI2 (2.0 * PI)
+            #define TIME_SPEED 0.2
+            #define TILE_SIZE 5.0
+            #define VUE_FACTOR 0.5
+
             varying vec2 vTex;
             uniform vec2 uResolution;
             uniform sampler2D uTexture;
             uniform float uTime;
+            
+            // https://thebookofshaders.com/10/
+            float random(float v) {
+                return fract(sin(v * 442.8776) * 25619.88321);
+            }
+            
+            float fun(float seed) {
+                float x1 = fract(uTime * TIME_SPEED + seed);
+                // float g = pow(sin(x1 * PI2), 2.0);
+                float g = sin(x1 * PI2) / 2.0 + 0.5;
+
+                float x2 = uTime * TIME_SPEED + seed + 123.441;
+                float x3 = uTime * TIME_SPEED + seed + 8753.1249;
+                float q = max(
+                    random(floor(x2)),
+                    random(floor(x3))
+                );
+                
+                float f = (q * g) / 2.0 + 0.5;
+                
+                return pow(f, 3.0);
+            }
+            
+            vec3 proc(vec2 uv, vec2 size, float fx, float fy) {
+                uv *= size;
+                
+                uv.x = mix(floor(uv.x - 1.0), ceil(uv.x + 1.0), fx);
+                uv.y = mix(floor(uv.y - 1.0), ceil(uv.y + 1.0), fy);
+
+                uv /= size;
+                
+                vec3 col = texture2D(uTexture, uv).rgb;
+                
+                return col;
+            }
+            
+            // =====================================================================================
+            // SRC: http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
+            
+            vec3 rgb2hsv(vec3 c) {
+                vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+                vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+                vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+            
+                float d = q.x - min(q.w, q.y);
+                float e = 1.0e-10;
+                return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+            }
+
+            vec3 hsv2rgb(vec3 c) {
+                vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+                vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+                return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+            }
+            
+            // =====================================================================================
+            
             void main() {
-                vec2 res = uResolution;
-                vec2 tex = vTex;
-                tex.x += uTime / 10.0;
-                vec3 color = texture2D(uTexture, tex).rgb;
-                gl_FragColor = vec4(color, 1);
+                vec2 uv = vTex;
+                vec2 size = vec2(min(uResolution.x, uResolution.y) / TILE_SIZE);
+                
+                float fx = fun(75.431234);
+                float fy = fun(1264.9441);
+                
+                vec2 t = 1.0 / uResolution.xy;
+                
+                vec3 col = vec3(0.0);
+                col += 0.500 * proc(uv, size, fx, fy);
+                col += 0.125 * proc(uv + vec2(+t.x, 0.0), size, fx, fy);
+                col += 0.125 * proc(uv + vec2(-t.x, 0.0), size, fx, fy);
+                col += 0.125 * proc(uv + vec2(0.0, +t.y), size, fx, fy);
+                col += 0.125 * proc(uv + vec2(0.0, -t.y), size, fx, fy);
+
+                vec3 hsv = rgb2hsv(col);
+                hsv.z *= VUE_FACTOR;
+                col = hsv2rgb(hsv);
+                
+                gl_FragColor = vec4(col, 1);
             }
             """
 
@@ -107,19 +187,22 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     }
 
     private val program by lazy { api.glCreateProgram().ck() }
-    private val aPosLoc by lazy { api.glGetAttribLocation(program, "aPos") }
-    private val aTexLoc by lazy { api.glGetAttribLocation(program, "aTex") }
+    private val aPosLoc by lazy { api.glGetAttribLocation(program, "aPos").ck() }
+    private val aTexLoc by lazy { api.glGetAttribLocation(program, "aTex").ck() }
 
-    private val uResolutionLoc by lazy { api.glGetUniformLocation(program, "uResolution") }
+    private val uMatrixLoc by lazy { api.glGetUniformLocation(program, "uMatrix").ck() }
+    private val matrix = FloatArray(16)
+
+    private val uResolutionLoc by lazy { api.glGetUniformLocation(program, "uResolution").ck() }
     private var width = 0
     private var height = 0
 
-    private val uTextureLoc by lazy { api.glGetUniformLocation(program, "uTexture") }
+    private val uTextureLoc by lazy { api.glGetUniformLocation(program, "uTexture").ck() }
     private var texture = 0
     private val defBitmap by lazy { Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) }
     private var _bitmapToLoad: Bitmap? = null
 
-    private val uTimeLoc by lazy { api.glGetUniformLocation(program, "uTime") }
+    private val uTimeLoc by lazy { api.glGetUniformLocation(program, "uTime").ck() }
     private var lastTimeTick = 0L
     private var timePassed = 0F
 
@@ -167,10 +250,21 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         // Update resolution
         width = w
         height = h
+
+        // Update matrix
+        Matrix.setIdentityM(matrix, 0)
+        Matrix.scaleM(matrix, 0, 1F, -1F, 1F)
+
+        // Scale matrix to correctly fit bg image
+        val mx = max(w, h).toFloat()
+        Matrix.scaleM(matrix, 0, mx / w, mx / h, 1F)
     }
 
     private fun draw(dt: Float) {
         api.glUseProgram(program).ck()
+
+        // uMatrix
+        api.glUniformMatrix4fv(uMatrixLoc, 1, false, matrix, 0)
 
         // uResolution
         api.glUniform2f(uResolutionLoc, width.toFloat(), height.toFloat())
