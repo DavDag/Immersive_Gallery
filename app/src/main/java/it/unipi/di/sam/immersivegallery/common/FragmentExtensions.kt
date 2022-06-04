@@ -2,7 +2,6 @@ package it.unipi.di.sam.immersivegallery.common
 
 import android.os.Build
 import android.view.WindowInsets
-import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
@@ -24,7 +23,13 @@ val Fragment.currentLocale: Locale
 @RequiresApi(Build.VERSION_CODES.R)
 fun Fragment.insetsController() = requireActivity().window.decorView.windowInsetsController
 
-fun Fragment.isFullScreen(): Boolean = (requireActivity() as MainActivity).isFullScreen
+fun Fragment.isFullScreen(): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        (requireActivity() as MainActivity).isFullScreen
+    } else {
+        (requireActivity().window.attributes.flags and WindowManager.LayoutParams.FLAG_FULLSCREEN) != 0
+    }
+}
 
 fun Fragment.enterFullScreen() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

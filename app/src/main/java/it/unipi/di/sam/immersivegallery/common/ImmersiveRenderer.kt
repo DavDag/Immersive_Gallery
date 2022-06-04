@@ -12,6 +12,8 @@ import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.max
+import kotlin.math.min
 
 // =================================================================================================
 
@@ -65,39 +67,14 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
 
             varying vec2 vTex;
             uniform vec2 uResolution;
-            uniform sampler2D uTexture;
+            uniform sampler2D uTexture1;
+            uniform sampler2D uTexture2;
+            uniform float uPercentage;
             uniform float uTime;
             
             // https://thebookofshaders.com/10/
             float random(float v) {
                 return fract(sin(v * 41.877) * 259.321);
-            }
-            
-            float fun(float seed) {
-                float x = uTime * TIME_SPEED + seed;
-            
-                float g = random(floor(x));
-                float gn = random(floor(x + 1.0));
-            
-                float h = fract(x);
-                float q = (1.0 - h) * g + h * gn;
-                
-                q = q / 2.0 + 0.5;
-    
-                return q;
-            }
-            
-            vec3 proc(vec2 uv, vec2 count, float fx, float fy) {
-                uv *= count;
-                
-                uv.x = mix(floor(uv.x - MOV_RANGE), ceil(uv.x + MOV_RANGE), fx);
-                uv.y = mix(floor(uv.y - MOV_RANGE), ceil(uv.y + MOV_RANGE), fy);
-
-                uv /= count;
-                
-                vec3 col = texture2D(uTexture, uv).rgb;
-                
-                return col;
             }
             
             // =====================================================================================
@@ -121,6 +98,63 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
             
             // =====================================================================================
             
+            float fun(float seed) {
+                float x = uTime * TIME_SPEED + seed;
+            
+                float g = random(floor(x));
+                float gn = random(floor(x + 1.0));
+            
+                float h = fract(x);
+                float q = (1.0 - h) * g + h * gn;
+                
+                q = q / 2.0 + 0.5;
+    
+                return q;
+            }
+            
+            vec3 proc(vec2 uv, vec2 count, float fx, float fy, sampler2D sampler) {
+                uv *= count;
+                
+                uv.x = mix(floor(uv.x - MOV_RANGE), ceil(uv.x + MOV_RANGE), fx);
+                uv.y = mix(floor(uv.y - MOV_RANGE), ceil(uv.y + MOV_RANGE), fy);
+
+                uv /= count;
+                
+                vec3 col = texture2D(sampler, uv).rgb;
+                
+                return col;
+            }
+            
+            vec3 all(vec2 uv, vec2 count, vec2 t, float fx, float fy, sampler2D sampler) {
+                vec3 col = vec3(0.0);
+                
+                // weights
+                // src: https://datacarpentry.org/image-processing/06-blurring/
+    
+                // Mid
+                col += 0.250 * proc(uv, count, fx, fy, sampler);
+                
+                // 4 axis
+                col += 0.110 * proc(uv + vec2(+t.x, 0.0), count, fx, fy, sampler);
+                col += 0.110 * proc(uv + vec2(-t.x, 0.0), count, fx, fy, sampler);
+                col += 0.110 * proc(uv + vec2(0.0, +t.y), count, fx, fy, sampler);
+                col += 0.110 * proc(uv + vec2(0.0, -t.y), count, fx, fy, sampler);
+                
+                // 4 corners
+                col += 0.050 * proc(uv + vec2(+t.x, +t.y), count, fx, fy, sampler);
+                col += 0.050 * proc(uv + vec2(-t.x, +t.y), count, fx, fy, sampler);
+                col += 0.050 * proc(uv + vec2(-t.x, -t.y), count, fx, fy, sampler);
+                col += 0.050 * proc(uv + vec2(+t.x, -t.y), count, fx, fy, sampler);
+                
+                // 4 axis (dist 2)
+                col += 0.010 * proc(uv + 2.0 * vec2(+t.x, 0.0), count, fx, fy, sampler);
+                col += 0.010 * proc(uv + 2.0 * vec2(-t.x, 0.0), count, fx, fy, sampler);
+                col += 0.010 * proc(uv + 2.0 * vec2(0.0, +t.y), count, fx, fy, sampler);
+                col += 0.010 * proc(uv + 2.0 * vec2(0.0, -t.y), count, fx, fy, sampler);
+                
+                return col;
+            }
+            
             void main() {
                 vec2 uv = vTex;
                 vec2 count = vec2(TILE_COUNT);
@@ -129,42 +163,18 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
                 float fy = fun(14.94);
                 
                 vec2 t = vec2(1.0) / count;
-                vec3 col = vec3(0.0);
                 
-                // weights
-                // src: https://datacarpentry.org/image-processing/06-blurring/
-    
-                // Mid
-                col += 0.250 * proc(uv, count, fx, fy);
-                
-                // 4 axis
-                col += 0.110 * proc(uv + vec2(+t.x, 0.0), count, fx, fy);
-                col += 0.110 * proc(uv + vec2(-t.x, 0.0), count, fx, fy);
-                col += 0.110 * proc(uv + vec2(0.0, +t.y), count, fx, fy);
-                col += 0.110 * proc(uv + vec2(0.0, -t.y), count, fx, fy);
-                
-                // 4 corners
-                col += 0.050 * proc(uv + vec2(+t.x, +t.y), count, fx, fy);
-                col += 0.050 * proc(uv + vec2(-t.x, +t.y), count, fx, fy);
-                col += 0.050 * proc(uv + vec2(-t.x, -t.y), count, fx, fy);
-                col += 0.050 * proc(uv + vec2(+t.x, -t.y), count, fx, fy);
-                
-                // 4 axis (dist 2)
-                col += 0.010 * proc(uv + 2.0 * vec2(+t.x, 0.0), count, fx, fy);
-                col += 0.010 * proc(uv + 2.0 * vec2(-t.x, 0.0), count, fx, fy);
-                col += 0.010 * proc(uv + 2.0 * vec2(0.0, +t.y), count, fx, fy);
-                col += 0.010 * proc(uv + 2.0 * vec2(0.0, -t.y), count, fx, fy);
+                vec3 col = mix(
+                    all(uv, count, t, fx, fy, uTexture1),
+                    all(uv, count, t, fx, fy, uTexture2),
+                    uPercentage
+                );
 
                 vec3 hsv = rgb2hsv(col);
                 hsv.z *= VUE_FACTOR;
                 col = hsv2rgb(hsv);
                 
                 gl_FragColor = vec4(col, 1);
-                
-                // uv *= count;
-                // uv = floor(uv);
-                // uv /= count;
-                // gl_FragColor = vec4(uv, 0, 1);
             }
             """
 
@@ -217,14 +227,19 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     private var swidth = 1
     private var sheight = 1
 
-    private val uTextureLoc by lazy { api.glGetUniformLocation(program, "uTexture").ck() }
-    private var texture = 0
-    private var twidth = 1
-    private var theight = 1
+    private val uTexture1 by lazy { api.glGetUniformLocation(program, "uTexture1").ck() }
+    private val uTexture2 by lazy { api.glGetUniformLocation(program, "uTexture2").ck() }
+    private var texture1 = 0
+    private var texture2 = 0
     private val defBitmap by lazy { Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) }
     private var placeholderBitmap: Bitmap? = null
-    private var isBitmapDirty = false
-    private var bitmapToLoad: Bitmap? = null
+    private var bitmap1: Bitmap? = null
+    private var bitmap2: Bitmap? = null
+    private var isBitmap1Dirty = false
+    private var isBitmap2Dirty = false
+
+    private val uPercentageLoc by lazy { api.glGetUniformLocation(program, "uPercentage").ck() }
+    private var percentage: Float = 0F
 
     private val uTimeLoc by lazy { api.glGetUniformLocation(program, "uTime").ck() }
     private var lastTimeTick = 0L
@@ -252,13 +267,21 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         logIfNotEmpty("PR", api.glGetProgramInfoLog(program).ck())
 
         // Create texture
-        val rawIntBuff = intArrayOf(0)
-        api.glGenTextures(1, rawIntBuff, 0).ck()
-        texture = rawIntBuff[0]
+        val rawIntBuff = intArrayOf(0, 0)
+        api.glGenTextures(2, rawIntBuff, 0).ck()
+        texture1 = rawIntBuff[0]
+        texture2 = rawIntBuff[1]
 
         // Update texture parameters
         api.glActiveTexture(api.GL_TEXTURE0 + 0).ck()
-        api.glBindTexture(api.GL_TEXTURE_2D, texture).ck()
+        api.glBindTexture(api.GL_TEXTURE_2D, texture1).ck()
+        api.glTexParameteri(api.GL_TEXTURE_2D, api.GL_TEXTURE_MIN_FILTER, api.GL_LINEAR).ck()
+        api.glTexParameteri(api.GL_TEXTURE_2D, api.GL_TEXTURE_MAG_FILTER, api.GL_LINEAR).ck()
+        api.glTexParameteri(api.GL_TEXTURE_2D, api.GL_TEXTURE_WRAP_S, api.GL_CLAMP_TO_EDGE).ck()
+        api.glTexParameteri(api.GL_TEXTURE_2D, api.GL_TEXTURE_WRAP_T, api.GL_CLAMP_TO_EDGE).ck()
+        GLUtils.texImage2D(api.GL_TEXTURE_2D, 0, defBitmap, 0).ck()
+        api.glActiveTexture(api.GL_TEXTURE0 + 1).ck()
+        api.glBindTexture(api.GL_TEXTURE_2D, texture2).ck()
         api.glTexParameteri(api.GL_TEXTURE_2D, api.GL_TEXTURE_MIN_FILTER, api.GL_LINEAR).ck()
         api.glTexParameteri(api.GL_TEXTURE_2D, api.GL_TEXTURE_MAG_FILTER, api.GL_LINEAR).ck()
         api.glTexParameteri(api.GL_TEXTURE_2D, api.GL_TEXTURE_WRAP_S, api.GL_CLAMP_TO_EDGE).ck()
@@ -290,10 +313,18 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         // uResolution
         api.glUniform2f(uResolutionLoc, swidth.toFloat(), sheight.toFloat())
 
-        // uTexture
-        api.glUniform1i(uTextureLoc, 0).ck()
+        // uTexture1
+        api.glUniform1i(uTexture1, 0).ck()
         api.glActiveTexture(api.GL_TEXTURE0 + 0).ck()
-        api.glBindTexture(api.GL_TEXTURE_2D, texture).ck()
+        api.glBindTexture(api.GL_TEXTURE_2D, texture1).ck()
+
+        // uTexture2
+        api.glUniform1i(uTexture2, 1).ck()
+        api.glActiveTexture(api.GL_TEXTURE0 + 1).ck()
+        api.glBindTexture(api.GL_TEXTURE_2D, texture2).ck()
+
+        // uPercentage
+        api.glUniform1f(uPercentageLoc, percentage).ck()
 
         // uTime
         api.glUniform1f(uTimeLoc, timePassed).ck()
@@ -353,7 +384,8 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         // Log.d(LOG_TAG, "Init($width, $height)")
 
         init(width, height)
-        isBitmapDirty = true
+        isBitmap1Dirty = true
+        isBitmap2Dirty = true
     }
 
     // =============================================================================================
@@ -385,32 +417,55 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     }
 
     private fun loadBitmapIfDirty() {
-        if (!isBitmapDirty) return
         // Log.d(LOG_TAG, "Bitmap reloaded")
 
-        val bitmap = bitmapToLoad?.bestCrop(swidth, sheight) ?: return
+        if (isBitmap1Dirty) {
+            isBitmap1Dirty = false
 
-        twidth = bitmap.width
-        theight = bitmap.height
+            val bitmap = bitmap1?.bestCrop(swidth, sheight) ?: return
+
+            api.glActiveTexture(api.GL_TEXTURE0 + 0).ck()
+            api.glBindTexture(api.GL_TEXTURE_2D, texture1).ck()
+            GLUtils.texImage2D(api.GL_TEXTURE_2D, 0, bitmap, 0).ck()
+            api.glBindTexture(api.GL_TEXTURE_2D, 0).ck()
+        }
+
+        if (isBitmap2Dirty) {
+            isBitmap2Dirty = false
+
+            val bitmap = bitmap2?.bestCrop(swidth, sheight) ?: return
+
+            api.glActiveTexture(api.GL_TEXTURE0 + 1).ck()
+            api.glBindTexture(api.GL_TEXTURE_2D, texture2).ck()
+            GLUtils.texImage2D(api.GL_TEXTURE_2D, 0, bitmap, 0).ck()
+            api.glBindTexture(api.GL_TEXTURE_2D, 0).ck()
+        }
 
         // Update matrix
         recreateMatrix()
-
-        api.glActiveTexture(api.GL_TEXTURE0 + 0).ck()
-        api.glBindTexture(api.GL_TEXTURE_2D, texture).ck()
-        GLUtils.texImage2D(api.GL_TEXTURE_2D, 0, bitmap, 0).ck()
-        api.glBindTexture(api.GL_TEXTURE_2D, 0).ck()
-
-        isBitmapDirty = false
     }
 
-    public fun updateImage(bitmap: Bitmap?) {
-        bitmapToLoad = bitmap ?: placeholderBitmap
-        isBitmapDirty = true
+    public fun updateSrcImage(bitmap: Bitmap?, forced: Boolean = false) {
+        if (bitmap1 != bitmap || forced) {
+            bitmap1 = bitmap ?: placeholderBitmap
+            isBitmap1Dirty = true
+        }
     }
 
-    public fun updatePlaceholderImage(bitmap: Bitmap?) {
-        placeholderBitmap = bitmap
+    public fun updateDestImage(bitmap: Bitmap?, forced: Boolean = false) {
+        if (bitmap2 != bitmap || forced) {
+            bitmap2 = bitmap
+            isBitmap2Dirty = true
+        }
     }
 
+    public fun updatePlaceholderImage(bitmap: Bitmap?, forced: Boolean = false) {
+        if (bitmap != placeholderBitmap || forced) {
+            placeholderBitmap = bitmap
+        }
+    }
+
+    public fun updatePercentage(value: Float) {
+        percentage = max(min((value / 100F), 1F), 0F)
+    }
 }

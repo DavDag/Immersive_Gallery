@@ -2,7 +2,6 @@ package it.unipi.di.sam.immersivegallery.common
 
 import android.content.Context
 import android.database.Cursor
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,6 +18,8 @@ abstract class GenericRecyclerAdapter<T, B, K> constructor(
 
     private var _listener: OnPositionChangedListener<T>? = null
     private val _inflater: LayoutInflater = LayoutInflater.from(context)
+
+    public var loop = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
         GenericRecyclerViewHolder(handler.inflate(_inflater, parent, false).rootView)
@@ -49,23 +50,25 @@ abstract class GenericRecyclerAdapter<T, B, K> constructor(
         return _position
     }
 
-    public fun prevPosition(loop: Boolean): Int {
+    public fun prevPosition(): Int {
         if (itemCount == 0) return 0
         var tmp = getPosition() - 1
         if (tmp == -1 && !loop) tmp = 0
         tmp = (tmp + itemCount) % itemCount
-        updatePosition(tmp)
-        return getPosition()
+        return tmp
     }
 
-    public fun nextPosition(loop: Boolean): Int {
+    public fun moveToPrevPosition(): Unit = updatePosition(prevPosition())
+
+    public fun nextPosition(): Int {
         if (itemCount == 0) return 0
         var tmp = getPosition() + 1
         if (tmp == itemCount && !loop) tmp = itemCount - 1
         tmp %= itemCount
-        updatePosition(tmp)
-        return getPosition()
+        return tmp
     }
+
+    public fun moveToNextPosition(): Unit = updatePosition(nextPosition())
 
     fun setOnPositionChangedListener(listener: OnPositionChangedListener<T>) {
         _listener = listener
@@ -170,8 +173,14 @@ fun RecyclerView.Adapter<RecyclerView.ViewHolder>.position() =
 fun RecyclerView.Adapter<RecyclerView.ViewHolder>.position(value: Int) =
     (this as GenericRecyclerAdapter<*, *, *>).updatePosition(value)
 
-fun RecyclerView.Adapter<RecyclerView.ViewHolder>.prevPosition(loop: Boolean) =
-    (this as GenericRecyclerAdapter<*, *, *>).prevPosition(loop)
+fun RecyclerView.Adapter<RecyclerView.ViewHolder>.prevPosition() =
+    (this as GenericRecyclerAdapter<*, *, *>).prevPosition()
 
-fun RecyclerView.Adapter<RecyclerView.ViewHolder>.nextPosition(loop: Boolean) =
-    (this as GenericRecyclerAdapter<*, *, *>).nextPosition(loop)
+fun RecyclerView.Adapter<RecyclerView.ViewHolder>.moveToPrevPosition() =
+    (this as GenericRecyclerAdapter<*, *, *>).moveToPrevPosition()
+
+fun RecyclerView.Adapter<RecyclerView.ViewHolder>.nextPosition() =
+    (this as GenericRecyclerAdapter<*, *, *>).nextPosition()
+
+fun RecyclerView.Adapter<RecyclerView.ViewHolder>.moveToNextPosition() =
+    (this as GenericRecyclerAdapter<*, *, *>).moveToNextPosition()

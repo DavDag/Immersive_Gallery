@@ -1,6 +1,9 @@
 package it.unipi.di.sam.immersivegallery.models
 
+import android.content.ContentResolver
+import android.graphics.Bitmap
 import android.net.Uri
+import it.unipi.di.sam.immersivegallery.common.toBitmap
 
 data class ImageData(
     val uri: Uri,
@@ -13,4 +16,15 @@ data class ImageData(
     val dataModified: Long,
     val bucketId: Long,
     val bucketName: String,
-)
+) {
+
+    private var _bitmap: Bitmap? = null
+
+    public fun bitmap(resolver: ContentResolver): Bitmap {
+        if (_bitmap == null) {
+            _bitmap = uri.toBitmap(resolver)
+        }
+        return _bitmap!!
+    }
+
+}

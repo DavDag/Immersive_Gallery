@@ -1,12 +1,12 @@
 package it.unipi.di.sam.immersivegallery.ui.main
 
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.icu.text.SimpleDateFormat
 import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.InputType
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.AutoCompleteTextView
@@ -16,6 +16,7 @@ import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.navigation.navGraphViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
@@ -24,7 +25,9 @@ import it.unipi.di.sam.immersivegallery.common.*
 import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
 import it.unipi.di.sam.immersivegallery.models.*
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class MainScreenFragment :
@@ -37,17 +40,11 @@ class MainScreenFragment :
     // TODO: Add styles for labels
     // TODO: Dark mode (?)
     // TODO: Fullscreen support (w-landscape => custom layout for landscape)
-    // TODO: Theme changes break bindings
-    // TODO: At start shows an old image (?)
-    // TODO: Look at GL errors when starting the app
 
-    // (Native app problems) Xiaomi
-    // TODO: fullscreen bottom ui keep showing back
-    // TODO: Background not moving ?
+    // TODO: Fix app image at beginning
+    // TODO: Fix empty result => (lin-interpolation)
 
     // (High Priority)
-    // TODO: Carousel background (adjust to transparent when with => placeholder !)
-    // TODO: Interpolate between changes
     // TODO: Catch intent for opening images
 
     // (Low Priority)
@@ -62,7 +59,7 @@ class MainScreenFragment :
 
     companion object {
         const val V_SLIDE_TRIGGER = 0.75F // Percentage
-        const val H_SLIDE_TRIGGER = 0.6F // Percentage
+        const val H_SLIDE_TRIGGER = 0.5F // Percentage
         const val SPRING_MAX_DELTA = 0.1F // Percentage
 
         const val DIRECTION_NONE = 0
@@ -173,10 +170,18 @@ class MainScreenFragment :
                 handler = CarouselImageAdapterItemHandlerWithCursor(),
                 cursor = null,
             )
-            imagesList.adapter!!.onPositionChangedListener<ImageData> { _, data ->
+            imagesList.adapter!!.onPositionChangedListener<ImageData> { p, data ->
                 updateDetailsState(false)
-                updateDetails(data)
+                updateDetails(p, data)
             }
+            // imagesList.addOnScrollListener(
+            //     object : RecyclerView.OnScrollListener() {
+            //         override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            //             super.onScrolled(recyclerView, dx, dy)
+            //             updateScrollPercentage()
+            //         }
+            //     }
+            // )
             imagesList.setOnTouchListener { _, event ->
                 // Check for scroll ended
                 if (event.action == MotionEvent.ACTION_UP ||
@@ -374,10 +379,8 @@ class MainScreenFragment :
         }
     }
 
-    private fun updateDetails(data: ImageData?) {
-        val bitmap = data?.uri?.toBitmap(requireActivity().contentResolver)
-        renderer.updateImage(bitmap)
-
+    private fun updateDetails(position: Int, data: ImageData?) {
+        updateRendererData()
         with(binding) {
             detailsUri.editText!!.setText(data?.uri.toString())
             detailsWidth.editText!!.setText(data?.width.toString())
@@ -436,7 +439,7 @@ class MainScreenFragment :
         }
 
         if (isEmpty) {
-            updateDetails(null)
+            updateDetails(0, null)
         }
     }
 
@@ -446,7 +449,7 @@ class MainScreenFragment :
         private var action = ACTION_NONE
         private var viewOriginF = 0F
         private var viewOriginD = 0F
-        private var scrollDistance = 0
+        public var scrollDistance = 0
 
         override fun onDown(e: MotionEvent?): Boolean {
             // Clear flags
@@ -466,6 +469,7 @@ class MainScreenFragment :
                 binding.imagesList.scrollToPosition(
                     binding.imagesList.adapter!!.position()
                 )
+                updateRendererData()
             }
 
             // "Spring" effect for overlays
@@ -520,15 +524,19 @@ class MainScreenFragment :
 
                         // Focus "next" image for carousel
                         binding.imagesList.smoothScrollToPosition(
-                            binding.imagesList.adapter!!.nextPosition(false)
+                            binding.imagesList.adapter!!.nextPosition()
                         )
+                        updateScrollPercentage()
+                        binding.imagesList.adapter!!.moveToNextPosition()
                     } else {
                         // Log.d("SCROLL", "Left to Right")
 
                         // Focus "prev" image for carousel
                         binding.imagesList.smoothScrollToPosition(
-                            binding.imagesList.adapter!!.prevPosition(false)
+                            binding.imagesList.adapter!!.prevPosition()
                         )
+                        updateScrollPercentage()
+                        binding.imagesList.adapter!!.moveToPrevPosition()
                     }
                     // Declare action done
                     action = ACTION_HOR_SWIPE
@@ -542,7 +550,8 @@ class MainScreenFragment :
                             binding.imagesList.adapter!!.position(),
                             dx.toInt()
                         )
-                    scrollDistance = adx.toInt()
+                    scrollDistance = dx.toInt()
+                    updateScrollPercentage()
                 }
             }
             // User is sliding vertically
@@ -676,5 +685,53 @@ class MainScreenFragment :
         renderer.updatePlaceholderImage(
             toBitmap(R.drawable.empty_search)
         )
+    }
+
+    private fun updateScrollPercentage() {
+        val recyclerView = binding.imagesList
+
+        val offset = recyclerView.computeHorizontalScrollOffset().toFloat()
+        val extent = recyclerView.computeHorizontalScrollExtent().toFloat()
+        val range = recyclerView.computeHorizontalScrollRange().toFloat()
+
+        val totalPercentage = (offset / (range - extent))
+        val itemCount = (recyclerView.layoutManager!!.itemCount.toFloat() - 1F)
+
+        val percentage =
+            (totalPercentage % (1F / itemCount) * itemCount * 100F /* * (1F / H_SLIDE_TRIGGER) */)
+                .roundToInt().toFloat()
+
+        // Log.d("RV", "$percentage")
+
+        val adapter = (binding.imagesList.adapter as GenericRecyclerAdapter<ImageData, *, *>)
+        val resolver = requireActivity().contentResolver
+
+        // Log.d("RV", "${adapter.prevPosition()} <- ${adapter.getPosition()} -> ${adapter.nextPosition()}")
+
+        val curr = adapter.itemAt(adapter.getPosition())
+        renderer.updateSrcImage(curr?.bitmap(resolver))
+
+        // Log.d("RV", "${gestureListener.scrollDistance}")
+
+        if (gestureListener.scrollDistance < 0) {
+            val next = adapter.itemAt(adapter.nextPosition())
+            renderer.updateDestImage(next?.bitmap(resolver))
+            renderer.updatePercentage(percentage % 100F)
+        } else {
+            val prev = adapter.itemAt(adapter.prevPosition())
+            renderer.updateDestImage(prev?.bitmap(resolver))
+            renderer.updatePercentage((100F - percentage) % 100F)
+        }
+    }
+
+    private fun updateRendererData() {
+        val adapter = (binding.imagesList.adapter as GenericRecyclerAdapter<ImageData, *, *>)
+        val resolver = requireActivity().contentResolver
+
+        val curr = adapter.itemAt(adapter.getPosition())
+
+        renderer.updateSrcImage(curr?.bitmap(resolver))
+        renderer.updateDestImage(null)
+        renderer.updatePercentage(0F)
     }
 }

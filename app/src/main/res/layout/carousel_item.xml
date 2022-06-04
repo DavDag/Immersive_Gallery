@@ -19,7 +19,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:adjustViewBounds="true"
         android:scaleType="fitCenter"
-        tools:src="@drawable/ic_launcher_background"
+        android:src="@drawable/empty_search"
         />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
