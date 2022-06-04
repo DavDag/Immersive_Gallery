@@ -1,6 +1,7 @@
 package it.unipi.di.sam.immersivegallery.ui.main
 
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.icu.text.SimpleDateFormat
 import android.opengl.GLSurfaceView
 import android.os.Bundle
@@ -33,11 +34,19 @@ class MainScreenFragment :
     // TODO: Add string
     // TODO: Add dimens
     // TODO: Gray => White (UI)
+    // TODO: Add styles for labels
+    // TODO: Dark mode (?)
     // TODO: Fullscreen support (w-landscape => custom layout for landscape)
-    // TODO: App Xiaomi fullscreen bottom ui keep showing back
+    // TODO: Theme changes break bindings
+    // TODO: At start shows an old image (?)
+
+    // (Native app problems) Xiaomi
+    // TODO: fullscreen bottom ui keep showing back
+    // TODO: Background not moving ?
 
     // (High Priority)
     // TODO: Carousel background (adjust to transparent when with => placeholder !)
+    // TODO: Interpolate between changes
     // TODO: Catch intent for opening images
 
     // (Low Priority)
@@ -639,6 +648,12 @@ class MainScreenFragment :
         binding.dynamicBackground.onPause()
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        autoCloseFilters.cancel()
+        autoCloseDetails.cancel()
+    }
+
     private fun setupDynamicBackground() {
         with(binding.dynamicBackground) {
             setEGLContextClientVersion(2)
@@ -654,5 +669,10 @@ class MainScreenFragment :
             // https://developer.android.com/reference/android/opengl/GLSurfaceView#setPreserveEGLContextOnPause(boolean)
             preserveEGLContextOnPause = true
         }
+
+        // Set placeholder image for "no results" queries
+        renderer.updatePlaceholderImage(
+            toBitmap(R.drawable.empty_search)
+        )
     }
 }

@@ -12,7 +12,6 @@ import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
-import kotlin.math.min
 
 // =================================================================================================
 
@@ -223,6 +222,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     private var twidth = 1
     private var theight = 1
     private val defBitmap by lazy { Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) }
+    private var placeholderBitmap: Bitmap? = null
     private var _bitmapToLoad: Bitmap? = null
 
     private val uTimeLoc by lazy { api.glGetUniformLocation(program, "uTime").ck() }
@@ -395,12 +395,16 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         GLUtils.texImage2D(api.GL_TEXTURE_2D, 0, _bitmapToLoad, 0).ck()
         api.glBindTexture(api.GL_TEXTURE_2D, 0).ck()
 
-        _bitmapToLoad!!.recycle()
+        // _bitmapToLoad!!.recycle()
         _bitmapToLoad = null
     }
 
     public fun updateImage(bitmap: Bitmap?) {
-        _bitmapToLoad = bitmap
+        _bitmapToLoad = bitmap ?: placeholderBitmap
+    }
+
+    public fun updatePlaceholderImage(bitmap: Bitmap?) {
+        placeholderBitmap = bitmap
     }
 
 }

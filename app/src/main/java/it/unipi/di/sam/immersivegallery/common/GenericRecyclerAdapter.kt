@@ -50,6 +50,7 @@ abstract class GenericRecyclerAdapter<T, B, K> constructor(
     }
 
     public fun prevPosition(loop: Boolean): Int {
+        if (itemCount == 0) return 0
         var tmp = getPosition() - 1
         if (tmp == -1 && !loop) tmp = 0
         tmp = (tmp + itemCount) % itemCount
@@ -58,6 +59,7 @@ abstract class GenericRecyclerAdapter<T, B, K> constructor(
     }
 
     public fun nextPosition(loop: Boolean): Int {
+        if (itemCount == 0) return 0
         var tmp = getPosition() + 1
         if (tmp == itemCount && !loop) tmp = itemCount - 1
         tmp %= itemCount
