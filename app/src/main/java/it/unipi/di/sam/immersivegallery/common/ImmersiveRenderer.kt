@@ -41,7 +41,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
 
     companion object {
         const val V_SHADER_SRC =
-            """
+            """#version 100
             attribute vec2 aPos;
             attribute vec2 aTex;
             uniform mat4 uMatrix;
@@ -53,15 +53,15 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
             """
 
         const val F_SHADER_SRC =
-            """
-            precision mediump float;
+            """#version 100
+            precision highp float;
             
             #define PI (3.141592)
             #define PI2 (2.0 * PI)
             #define TIME_SPEED 0.75
-            #define TILE_COUNT 150.0
+            #define TILE_COUNT 200.0
             #define VUE_FACTOR 0.5
-            #define MOV_RANGE 2.0
+            #define MOV_RANGE 4.0
 
             varying vec2 vTex;
             uniform vec2 uResolution;
@@ -70,7 +70,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
             
             // https://thebookofshaders.com/10/
             float random(float v) {
-                return fract(sin(v * 442.8776) * 25619.88321);
+                return fract(sin(v * 41.877) * 259.321);
             }
             
             float fun(float seed) {
@@ -125,8 +125,8 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
                 vec2 uv = vTex;
                 vec2 count = vec2(TILE_COUNT);
                 
-                float fx = fun(75.431234);
-                float fy = fun(1264.9441);
+                float fx = fun(75.43);
+                float fy = fun(14.94);
                 
                 vec2 t = vec2(1.0) / count;
                 vec3 col = vec3(0.0);
@@ -317,7 +317,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     // =============================================================================================
 
     private fun logInfos() {
-        api.glGetString(GL10.GL_VERSION).ck().also { Log.w(LOG_TAG, "Version: $it") }
+        api.glGetString(api.GL_VERSION).ck().also { Log.w(LOG_TAG, "Version: $it") }
     }
 
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
