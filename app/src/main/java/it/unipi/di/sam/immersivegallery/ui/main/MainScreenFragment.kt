@@ -39,6 +39,7 @@ class MainScreenFragment :
     // TODO: Fullscreen support (w-landscape => custom layout for landscape)
     // TODO: Theme changes break bindings
     // TODO: At start shows an old image (?)
+    // TODO: Look at GL errors when starting the app
 
     // (Native app problems) Xiaomi
     // TODO: fullscreen bottom ui keep showing back

@@ -223,7 +223,8 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     private var theight = 1
     private val defBitmap by lazy { Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) }
     private var placeholderBitmap: Bitmap? = null
-    private var _bitmapToLoad: Bitmap? = null
+    private var isBitmapDirty = false
+    private var bitmapToLoad: Bitmap? = null
 
     private val uTimeLoc by lazy { api.glGetUniformLocation(program, "uTime").ck() }
     private var lastTimeTick = 0L
@@ -276,6 +277,8 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
 
         // Update matrix
         recreateMatrix()
+
+        // TODO: Recrop bitmaps
     }
 
     private fun draw(dt: Float) {
@@ -350,6 +353,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         // Log.d(LOG_TAG, "Init($width, $height)")
 
         init(width, height)
+        isBitmapDirty = true
     }
 
     // =============================================================================================
@@ -362,49 +366,52 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         Matrix.scaleM(matrix, 0, 1F, -1F, 1F)
 
         if (swidth > sheight) {
-            // Scale matrix to correctly fit screen
-            val sratio = swidth.toFloat() / sheight.toFloat()
-            Matrix.scaleM(matrix, 0, 1F, sratio, 1F)
+            // // Scale matrix to correctly fit screen
+            // val sratio = swidth.toFloat() / sheight.toFloat()
+            // Matrix.scaleM(matrix, 0, 1F, sratio, 1F)
 
-            // Scale matrix to correctly fit image
-            val tratio = twidth.toFloat() / theight.toFloat()
-            Matrix.scaleM(matrix, 0, 1F, 1F / tratio, 1F)
+            // // Scale matrix to correctly fit image
+            // val tratio = twidth.toFloat() / theight.toFloat()
+            // Matrix.scaleM(matrix, 0, 1F, 1F / tratio, 1F)
         } else {
-            // Scale matrix to correctly fit screen
-            val sratio = sheight.toFloat() / swidth.toFloat()
-            Matrix.scaleM(matrix, 0, sratio, 1F, 1F)
+            // // Scale matrix to correctly fit screen
+            // val sratio = sheight.toFloat() / swidth.toFloat()
+            // Matrix.scaleM(matrix, 0, sratio, 1F, 1F)
 
-            // Scale matrix to correctly fit image
-            val tratio = theight.toFloat() / twidth.toFloat()
-            Matrix.scaleM(matrix, 0, 1F / tratio, 1F, 1F)
+            // // Scale matrix to correctly fit image
+            // val tratio = theight.toFloat() / twidth.toFloat()
+            // Matrix.scaleM(matrix, 0, 1F / tratio, 1F, 1F)
         }
     }
 
     private fun loadBitmapIfDirty() {
-        if (_bitmapToLoad == null) return
+        if (!isBitmapDirty) return
         // Log.d(LOG_TAG, "Bitmap reloaded")
 
-        twidth = _bitmapToLoad!!.width
-        theight = _bitmapToLoad!!.height
+        val bitmap = bitmapToLoad?.bestCrop(swidth, sheight) ?: return
+
+        twidth = bitmap.width
+        theight = bitmap.height
 
         // Update matrix
         recreateMatrix()
 
         api.glActiveTexture(api.GL_TEXTURE0 + 0).ck()
         api.glBindTexture(api.GL_TEXTURE_2D, texture).ck()
-        GLUtils.texImage2D(api.GL_TEXTURE_2D, 0, _bitmapToLoad, 0).ck()
+        GLUtils.texImage2D(api.GL_TEXTURE_2D, 0, bitmap, 0).ck()
         api.glBindTexture(api.GL_TEXTURE_2D, 0).ck()
 
-        // _bitmapToLoad!!.recycle()
-        _bitmapToLoad = null
+        isBitmapDirty = false
     }
 
     public fun updateImage(bitmap: Bitmap?) {
-        _bitmapToLoad = bitmap ?: placeholderBitmap
+        bitmapToLoad = bitmap ?: placeholderBitmap
+        isBitmapDirty = true
     }
 
     public fun updatePlaceholderImage(bitmap: Bitmap?) {
         placeholderBitmap = bitmap
+        isBitmapDirty = true
     }
 
 }

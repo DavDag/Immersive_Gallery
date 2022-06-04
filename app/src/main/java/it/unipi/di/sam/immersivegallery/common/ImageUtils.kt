@@ -27,3 +27,23 @@ fun Uri.toBitmap(resolver: ContentResolver): Bitmap {
 fun Fragment.toBitmap(res: Int): Bitmap? {
     return AppCompatResources.getDrawable(requireContext(), res)?.toBitmap()?.toARGB888()
 }
+
+fun Bitmap.bestCrop(swidth: Int, sheight: Int): Bitmap {
+    return if (swidth > sheight) {
+        val sratio = sheight.toFloat() / swidth.toFloat()
+        val finalHeight = (sratio * width.toFloat()).toInt()
+        Bitmap.createBitmap(
+            this,
+            0, height / 2 - finalHeight / 2,
+            width, finalHeight
+        )
+    } else {
+        val sratio = swidth.toFloat() / sheight.toFloat()
+        val finalWidth = (sratio * height.toFloat()).toInt()
+        Bitmap.createBitmap(
+            this,
+            width / 2 - finalWidth / 2, 0,
+            finalWidth, height
+        )
+    }
+}

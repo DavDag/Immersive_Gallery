@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:background="#CC000000"
         android:clipToPadding="false"
-        android:elevation="2dp"
+        android:elevation="10dp"
         android:padding="16dp"
         android:visibility="visible"
         app:layout_constraintBottom_toTopOf="parent"
@@ -174,7 +174,8 @@
     <android.opengl.GLSurfaceView
         android:id="@+id/dynamic_background"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:elevation="0dp"/>
 
     <!--
     Placeholder
@@ -236,7 +237,7 @@
         android:layout_height="wrap_content"
         android:background="#CC000000"
         android:clipToPadding="false"
-        android:elevation="2dp"
+        android:elevation="10dp"
         android:padding="16dp"
         android:visibility="visible"
         app:layout_constraintEnd_toEndOf="parent"
