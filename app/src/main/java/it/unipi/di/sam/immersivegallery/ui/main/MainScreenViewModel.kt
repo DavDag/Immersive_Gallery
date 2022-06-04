@@ -11,7 +11,6 @@ import it.unipi.di.sam.immersivegallery.common.MultipleEventLiveData
 import it.unipi.di.sam.immersivegallery.common.SingleEventLiveData
 import it.unipi.di.sam.immersivegallery.models.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,7 +26,8 @@ class MainScreenViewModel @Inject constructor(
             .From(_filtersDataLoaded, _oldFiltersLoaded)
             .asLiveData()
 
-    public var hasLoadedFilters = false
+    public var hasLoadedFiltersData = false
+    public var hasLoadedOldFilters = false
     public var filters = DEFAULT_FILTERS
     private val _reload = SingleEventLiveData<Unit>()
     public val reload: LiveData<Unit> = _reload
@@ -35,10 +35,10 @@ class MainScreenViewModel @Inject constructor(
     // =======================================================
 
     fun loadFiltersQueryAsync(query: Cursor) {
-        hasLoadedFilters = false
+        hasLoadedFiltersData = false
 
-        viewModelScope.launch(Dispatchers.IO) {
-            // delay(2000L)
+        viewModelScope.launch(Dispatchers.Main) {
+            // delay(10000L)
             query.use { cursor ->
 
                 val bucketsMap = mutableMapOf(
@@ -81,6 +81,8 @@ class MainScreenViewModel @Inject constructor(
                     )
                 }
 
+                hasLoadedFiltersData = true
+
                 _filtersDataLoaded.postValue(
                     ImageSearchFiltersData(
                         buckets = bucketsMap.values.toList(),
@@ -89,16 +91,18 @@ class MainScreenViewModel @Inject constructor(
                     )
                 )
             }
-
-            hasLoadedFilters = true
         }
     }
 
     // =======================================================
 
     fun getOldFilters() {
+        hasLoadedOldFilters = false
         viewModelScope.launch(Dispatchers.IO) {
+            // delay(5000L)
             val res = sharedPrefsRepository.loadSavedFilters() ?: DEFAULT_FILTERS
+            filters = res
+            hasLoadedOldFilters = true
             _oldFiltersLoaded.postValue(res)
         }
     }

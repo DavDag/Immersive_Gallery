@@ -106,6 +106,8 @@ class GenericRecyclerAdapterWithCursor<T, B, K> constructor(
     private val cache = linkedMapOf<Int, T?>()
 
     override fun itemAt(position: Int): T? {
+        if (cursor == null || cursor!!.count == 0) return null
+
         // Search inside cache
         if (cache.contains(position)) return cache[position]
 
@@ -151,7 +153,7 @@ class GenericRecyclerAdapterWithCursor<T, B, K> constructor(
         // Update position
         if (resetPosition) super.updatePosition(0)
         else if (cursor.count <= getPosition()) super.updatePosition(cursor.count - 1)
-        else super.updatePosition(getPosition())
+        else if (cursor.count > 0) super.updatePosition(getPosition())
 
         // Returns "new" position
         return getPosition()

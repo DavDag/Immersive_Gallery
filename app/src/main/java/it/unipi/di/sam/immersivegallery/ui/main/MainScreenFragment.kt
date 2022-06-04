@@ -14,9 +14,9 @@ import androidx.core.content.ContentResolverCompat
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.children
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.navGraphViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
@@ -24,8 +24,9 @@ import it.unipi.di.sam.immersivegallery.R
 import it.unipi.di.sam.immersivegallery.common.*
 import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
 import it.unipi.di.sam.immersivegallery.models.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.abs
-import kotlin.math.floor
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -39,13 +40,14 @@ class MainScreenFragment :
     // TODO: Gray => White (UI)
     // TODO: Add styles for labels
     // TODO: Dark mode (?)
-    // TODO: Fullscreen support (w-landscape => custom layout for landscape)
 
-    // TODO: Fix app image at beginning
-    // TODO: Fix empty result => (lin-interpolation)
+    // TODO: Init speed
 
     // (High Priority)
     // TODO: Catch intent for opening images
+
+    // (Mid Priority)
+    // TODO: Fullscreen support (w-landscape => custom layout for landscape)
 
     // (Low Priority)
     // TODO: Tutorial (first time)
@@ -282,7 +284,7 @@ class MainScreenFragment :
 
     private fun loadImageListAsync(resetPosition: Boolean) {
         // Exit if filters are not loaded yet
-        if (!viewModel.hasLoadedFilters) return
+        if (!viewModel.hasLoadedOldFilters || !viewModel.hasLoadedFiltersData) return
 
         // Retrieve filters
         val filters = viewModel.filters
@@ -334,12 +336,12 @@ class MainScreenFragment :
             null,
         )
 
-        // Update UI
-        updateResults(query.count)
-
         // Update cursor
         val position = binding.imagesList.adapter!!.replaceCursor(query, resetPosition)
         binding.imagesList.scrollToPosition(position)
+
+        // Update UI
+        updateResults(query.count)
     }
 
     private fun updateUI(oldFilters: ImageSearchFilters, filtersData: ImageSearchFiltersData) {
@@ -381,6 +383,7 @@ class MainScreenFragment :
 
     private fun updateDetails(position: Int, data: ImageData?) {
         updateRendererData()
+
         with(binding) {
             detailsUri.editText!!.setText(data?.uri.toString())
             detailsWidth.editText!!.setText(data?.width.toString())
@@ -690,46 +693,58 @@ class MainScreenFragment :
     private fun updateScrollPercentage() {
         val recyclerView = binding.imagesList
 
+        // Retrieve parameters to compute global percentage
         val offset = recyclerView.computeHorizontalScrollOffset().toFloat()
         val extent = recyclerView.computeHorizontalScrollExtent().toFloat()
         val range = recyclerView.computeHorizontalScrollRange().toFloat()
 
+        // Global percentage (& item count)
         val totalPercentage = (offset / (range - extent))
         val itemCount = (recyclerView.layoutManager!!.itemCount.toFloat() - 1F)
 
+        // Compute "relative" percentage
         val percentage =
-            (totalPercentage % (1F / itemCount) * itemCount * 100F /* * (1F / H_SLIDE_TRIGGER) */)
+            if (totalPercentage.isNaN()) 0F
+            else (totalPercentage % (1F / itemCount) * itemCount * 100F)
                 .roundToInt().toFloat()
 
-        // Log.d("RV", "$percentage")
+        // Log.d("RV", "Percentage: $percentage")
 
+        // Retrieve adapter and resolver
         val adapter = (binding.imagesList.adapter as GenericRecyclerAdapter<ImageData, *, *>)
         val resolver = requireActivity().contentResolver
 
-        // Log.d("RV", "${adapter.prevPosition()} <- ${adapter.getPosition()} -> ${adapter.nextPosition()}")
+        // Log.d("RV", "Pos: ${adapter.prevPosition()} <- ${adapter.getPosition()} -> ${adapter.nextPosition()}")
 
+        // Update "src" bitmap
         val curr = adapter.itemAt(adapter.getPosition())
         renderer.updateSrcImage(curr?.bitmap(resolver))
 
-        // Log.d("RV", "${gestureListener.scrollDistance}")
+        // Log.d("RV", "Scroll Distance ${gestureListener.scrollDistance}")
 
+        // Update "next" bitmap (based on scroll direction)
         if (gestureListener.scrollDistance < 0) {
             val next = adapter.itemAt(adapter.nextPosition())
             renderer.updateDestImage(next?.bitmap(resolver))
-            renderer.updatePercentage(percentage % 100F)
+            renderer.updatePercentage((percentage % 100F) * (1F / H_SLIDE_TRIGGER))
         } else {
             val prev = adapter.itemAt(adapter.prevPosition())
             renderer.updateDestImage(prev?.bitmap(resolver))
-            renderer.updatePercentage((100F - percentage) % 100F)
+            renderer.updatePercentage(((100F - percentage) % 100F) * (1F / H_SLIDE_TRIGGER))
         }
     }
 
     private fun updateRendererData() {
+        // Retrieve adapter and resolver
         val adapter = (binding.imagesList.adapter as GenericRecyclerAdapter<ImageData, *, *>)
         val resolver = requireActivity().contentResolver
 
+        // Retrieve current data
         val curr = adapter.itemAt(adapter.getPosition())
 
+        // Log.d("RV", "Image: ${curr?.id}")
+
+        // Update renderer data
         renderer.updateSrcImage(curr?.bitmap(resolver))
         renderer.updateDestImage(null)
         renderer.updatePercentage(0F)

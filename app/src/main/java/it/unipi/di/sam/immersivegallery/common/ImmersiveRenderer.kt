@@ -300,8 +300,6 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
 
         // Update matrix
         recreateMatrix()
-
-        // TODO: Recrop bitmaps
     }
 
     private fun draw(dt: Float) {
@@ -422,7 +420,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
         if (isBitmap1Dirty) {
             isBitmap1Dirty = false
 
-            val bitmap = bitmap1?.bestCrop(swidth, sheight) ?: return
+            val bitmap = (bitmap1 ?: placeholderBitmap)?.bestCrop(swidth, sheight) ?: return
 
             api.glActiveTexture(api.GL_TEXTURE0 + 0).ck()
             api.glBindTexture(api.GL_TEXTURE_2D, texture1).ck()
@@ -447,7 +445,7 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
 
     public fun updateSrcImage(bitmap: Bitmap?, forced: Boolean = false) {
         if (bitmap1 != bitmap || forced) {
-            bitmap1 = bitmap ?: placeholderBitmap
+            bitmap1 = bitmap
             isBitmap1Dirty = true
         }
     }
