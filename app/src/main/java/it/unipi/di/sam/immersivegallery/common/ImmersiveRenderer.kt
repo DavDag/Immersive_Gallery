@@ -411,7 +411,6 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
 
     public fun updatePlaceholderImage(bitmap: Bitmap?) {
         placeholderBitmap = bitmap
-        isBitmapDirty = true
     }
 
 }

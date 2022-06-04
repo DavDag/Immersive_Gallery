@@ -73,6 +73,9 @@ android {
 
             // Help minifying, obfuscating, and optimizing the code.
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            // Not for REAL production
+            signingConfig = signingConfigs.debug
         }
     }
 

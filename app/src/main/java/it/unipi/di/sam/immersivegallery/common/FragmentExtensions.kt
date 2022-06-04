@@ -2,6 +2,7 @@ package it.unipi.di.sam.immersivegallery.common
 
 import android.os.Build
 import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
@@ -29,6 +30,8 @@ fun Fragment.enterFullScreen() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         insetsController()?.hide(
             WindowInsets.Type.systemBars()
+                    or WindowInsets.Type.statusBars()
+                    or WindowInsets.Type.navigationBars()
         )
     } else {
         requireActivity().window.setFlags(
@@ -42,6 +45,8 @@ fun Fragment.exitFullScreen() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         insetsController()?.show(
             WindowInsets.Type.systemBars()
+                    or WindowInsets.Type.statusBars()
+                    or WindowInsets.Type.navigationBars()
         )
     } else {
         requireActivity().window.clearFlags(

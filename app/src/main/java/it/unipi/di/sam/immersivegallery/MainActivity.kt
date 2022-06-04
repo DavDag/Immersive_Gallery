@@ -3,6 +3,7 @@ package it.unipi.di.sam.immersivegallery
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowInsets
+import android.view.WindowInsetsController
 import androidx.appcompat.app.AppCompatActivity
 import dagger.hilt.android.AndroidEntryPoint
 import it.unipi.di.sam.immersivegallery.databinding.MainActivityBinding
@@ -20,6 +21,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = MainActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        window.setDecorFitsSystemWindows(false)
+        window.decorView.windowInsetsController?.systemBarsBehavior =
+            WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.decorView.setOnApplyWindowInsetsListener { view, insets ->

@@ -377,7 +377,6 @@ class MainScreenFragment :
     private fun updateDetails(data: ImageData?) {
         val bitmap = data?.uri?.toBitmap(requireActivity().contentResolver)
         renderer.updateImage(bitmap)
-        // binding.dynamicBackground.requestRender()
 
         with(binding) {
             detailsUri.editText!!.setText(data?.uri.toString())
@@ -436,7 +435,9 @@ class MainScreenFragment :
             imagesListText.editText!!.setText(count.toString())
         }
 
-        updateDetails(null)
+        if (isEmpty) {
+            updateDetails(null)
+        }
     }
 
     private val gestureListener = object : GestureDetector.SimpleOnGestureListener() {
