@@ -33,12 +33,7 @@ import kotlin.math.roundToInt
 class MainScreenFragment :
     BaseFragment<FragmentMainScreenBinding>(FragmentMainScreenBinding::inflate) {
 
-    // TODO: Add colors
-    // TODO: Add string
-    // TODO: Add dimens
-    // TODO: Gray => White (UI)
-    // TODO: Add styles for labels
-    // TODO: Dark mode (?)
+    // TODO: Add size filters
 
     // (High Priority)
     // TODO: Catch intent for opening images
@@ -70,6 +65,7 @@ class MainScreenFragment :
         const val ACTION_OPEN_DETAILS = 3
 
         const val OVERLAY_CLOSE_DELAY = 15000L
+        const val OVERLAY_ALPHA = 196 // 0 - 255
 
         val IMAGE_DATA_QUERY_COLUMNS = mutableListOf(
             MediaStore.Images.Media._ID,
@@ -136,6 +132,7 @@ class MainScreenFragment :
                     child.editText!!.inputType = InputType.TYPE_NULL
                 }
             }
+            filtersContainer.background.alpha = OVERLAY_ALPHA
             filtersContainerOverlay.setOnTouchListener { _, _ ->
                 autoCloseFilters.restart()
                 return@setOnTouchListener false
@@ -210,6 +207,7 @@ class MainScreenFragment :
                     child.editText!!.inputType = InputType.TYPE_NULL
                 }
             }
+            detailsContainer.background.alpha = OVERLAY_ALPHA
             detailsContainerOverlay.setOnTouchListener { _, _ ->
                 autoCloseDetails.restart()
                 return@setOnTouchListener false

@@ -11,24 +11,20 @@
     -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/loading_title"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+        style="@style/MyTheme.Label.Layout.Outlined.TopOnly"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        app:boxCornerRadiusBottomEnd="0dp"
-        app:boxCornerRadiusBottomStart="0dp"
+        android:layout_marginHorizontal="@dimen/medium_margin"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <com.google.android.material.textfield.TextInputEditText
+            style="@style/MyTheme.Label.Edit.Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:focusable="false"
-            android:inputType="none"
-            android:text="Loading permissions..."
-            android:textAlignment="center" />
+            android:text="@string/permissions_loading"/>
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -67,31 +63,27 @@
         android:gravity="center_horizontal"
         android:orientation="vertical"
         android:visibility="gone"
-        tools:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible">
 
         <!--
         Permissions title
         -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/explanation_title"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            style="@style/MyTheme.Label.Layout.Empty"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            app:boxStrokeWidth="0dp">
+            android:layout_marginHorizontal="@dimen/medium_margin">
 
             <com.google.android.material.textfield.TextInputEditText
-                style="@style/TextAppearance.Material3.TitleMedium"
+                style="@style/MyTheme.Label.Edit.Title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none"
-                android:text="Why do i need permissions ?"
-                android:textAlignment="center" />
+                android:text="@string/permissions_title" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -100,20 +92,16 @@
         -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/explanation_text"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            style="@style/MyTheme.Label.Layout.Empty"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            app:boxStrokeWidth="0dp">
+            android:layout_marginHorizontal="@dimen/medium_margin">
 
             <com.google.android.material.textfield.TextInputEditText
-                style="@style/TextAppearance.Material3.BodyMedium"
+                style="@style/MyTheme.Label.Edit.Text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none"
-                android:text="Explanation"
-                android:textAlignment="center" />
+                android:text="@string/permissions_explanation" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -122,12 +110,12 @@
         -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/explanation_button"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+            style="@style/MyTheme.Button.Outlined"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:paddingHorizontal="16dp"
-            android:text="Exit" />
+            android:layout_margin="@dimen/small_margin"
+            android:paddingHorizontal="@dimen/medium_padding"
+            android:text="@string/permissions_exit" />
 
     </LinearLayout>
 

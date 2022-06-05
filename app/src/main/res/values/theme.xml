@@ -1,9 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.MyApp" parent="Theme.Material3.DayNight.NoActionBar">
+    <!--
+    App Theme
+    -->
+    <style name="MyTheme.App" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- ... -->
         <item name="android:fitsSystemWindows">true</item>
+    </style>
+
+    <!--
+    Material3 TextInputLayout
+    -->
+
+    <!-- (Label) Base -->
+    <style name="MyTheme.Label.Layout.Base" parent="Widget.Material3.TextInputLayout.OutlinedBox.Dense">
+        <item name="android:textAppearance">?attr/textAppearanceBodyMedium</item>
+        <item name="hintTextAppearance">?attr/textAppearanceLabelSmall</item>
+    </style>
+
+    <!-- (Label) Empty -->
+    <style name="MyTheme.Label.Layout.Empty" parent="MyTheme.Label.Layout.Base">
+        <item name="boxStrokeWidth">0dp</item>
+    </style>
+
+    <!-- (Label) Outlined -->
+    <style name="MyTheme.Label.Layout.Outlined" parent="MyTheme.Label.Layout.Base">
+    </style>
+
+    <!-- (Label) Outlined (top-only) -->
+    <style name="MyTheme.Label.Layout.Outlined.TopOnly" parent="MyTheme.Label.Layout.Base">
+        <item name="boxCornerRadiusBottomStart">0dp</item>
+        <item name="boxCornerRadiusBottomEnd">0dp</item>
+    </style>
+
+    <!-- (Label) Outlined (bottom-only) -->
+    <style name="MyTheme.Label.Layout.Outlined.BottomOnly" parent="MyTheme.Label.Layout.Base">
+        <item name="boxCornerRadiusTopStart">0dp</item>
+        <item name="boxCornerRadiusTopEnd">0dp</item>
+    </style>
+
+    <!-- (DropDown) Base -->
+    <style name="MyTheme.DropDown.Layout.Base" parent="Widget.Material3.TextInputLayout.OutlinedBox.Dense.ExposedDropdownMenu">
+        <item name="android:textAppearance">?attr/textAppearanceBodyMedium</item>
+        <item name="hintTextAppearance">?attr/textAppearanceLabelSmall</item>
+    </style>
+
+    <!-- (DropDown) Filled -->
+    <style name="MyTheme.DropDown.Layout.Filled" parent="MyTheme.DropDown.Layout.Base">
+
+    </style>
+
+    <!--
+    Material3 TextInputEditText
+    -->
+
+    <!-- (Label) Base -->
+    <style name="MyTheme.Label.Edit.Base" parent="Widget.Material3.TextInputEditText.OutlinedBox.Dense">
+        <item name="android:focusable">false</item>
+        <item name="android:clickable">false</item>
+        <item name="android:inputType">none</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyMedium</item>
+    </style>
+
+    <!-- (Label) Standard Text -->
+    <style name="MyTheme.Label.Edit.Text" parent="MyTheme.Label.Edit.Base">
+        <item name="android:textAlignment">center</item>
+    </style>
+
+    <!-- (Label) Small Text -->
+    <style name="MyTheme.Label.Edit.Text.Small" parent="MyTheme.Label.Edit.Text">
+        <item name="android:textAppearance">?attr/textAppearanceBodySmall</item>
+    </style>
+
+    <!-- (Label) Small Text -->
+    <style name="MyTheme.Label.Edit.Text.Large" parent="MyTheme.Label.Edit.Text">
+        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
+    </style>
+
+    <!-- (Label) Title -->
+    <style name="MyTheme.Label.Edit.Title" parent="MyTheme.Label.Edit.Base">
+        <item name="android:textAlignment">center</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
+    </style>
+
+    <!-- (DropDown) Base -->
+    <style name="MyTheme.DropDown.Edit.Base" parent="Widget.Material3.AutoCompleteTextView.OutlinedBox.Dense">
+        <item name="android:focusable">false</item>
+        <item name="android:inputType">none</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyMedium</item>
+    </style>
+
+    <!-- (DropDown) Filled -->
+    <style name="MyTheme.DropDown.Edit.Filled" parent="MyTheme.DropDown.Edit.Base">
+
+    </style>
+
+    <!--
+    Material3 Button
+    -->
+
+    <!-- Base -->
+    <style name="MyTheme.Button.Base" parent="Widget.Material3.Button.OutlinedButton">
+
+    </style>
+
+    <!-- Outlined -->
+    <style name="MyTheme.Button.Outlined" parent="MyTheme.Button.Base">
+
     </style>
 
 </resources>

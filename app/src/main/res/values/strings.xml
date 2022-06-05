@@ -1,5 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="app_name">Immersive Gallery</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <!--
+    PermReqFragment
+    -->
+    <string name="permissions_loading">Loading Permissions …</string>
+    <string name="permissions_title">Why do i need permissions ?</string>
+    <string name="permissions_explanation">Explanation</string>
+    <string name="permissions_exit">Exit</string>
+
+    <!--
+    MainScreenFragment
+    -->
+    <string name="filters_album_hint">Album</string>
+    <string name="filters_size_min_hint">Size (min)</string>
+    <string name="filters_size_max_hint">Size (max)</string>
+    <string name="filters_mime_hint">Mime</string>
+    <string name="filters_count_hint">Count</string>
+    <string name="placeholder_text">No results found</string>
+    <string name="details_uri_hint">Uri</string>
+    <string name="details_width_hint">Width</string>
+    <string name="details_height_hint">Height</string>
+    <string name="details_size_hint">Size</string>
+    <string name="details_date_taken_hint">Date taken</string>
+    <string name="details_date_modified_hint">Date modified</string>
+    <string name="details_mime_hint">Mime</string>
+
 </resources>

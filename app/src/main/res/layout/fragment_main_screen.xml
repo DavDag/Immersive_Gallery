@@ -13,15 +13,14 @@
         android:id="@+id/filters_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#CC000000"
+        android:background="?android:attr/colorBackground"
         android:clipToPadding="false"
         android:elevation="10dp"
-        android:padding="16dp"
+        android:padding="@dimen/medium_padding"
         android:visibility="visible"
         app:layout_constraintBottom_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:background="#CC000000"
         tools:translationY="300dp">
 
         <!--
@@ -39,20 +38,20 @@
         -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/filters_album"
-            style="@style/Widget.Material3.TextInputLayout.FilledBox.Dense.ExposedDropdownMenu"
+            style="@style/MyTheme.DropDown.Layout.Filled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginVertical="4dp"
-            android:hint="Album"
+            android:hint="@string/filters_album_hint"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
             <AutoCompleteTextView
+                style="@style/MyTheme.DropDown.Edit.Filled"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none" />
+                tools:ignore="LabelFor"
+                tools:text="Download" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -61,21 +60,22 @@
         -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/filters_size_min"
-            style="@style/Widget.Material3.TextInputLayout.FilledBox.Dense.ExposedDropdownMenu"
+            style="@style/MyTheme.DropDown.Layout.Filled"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginVertical="4dp"
-            android:layout_marginEnd="2dp"
-            android:hint="Size (min)"
+            android:layout_marginVertical="@dimen/small_margin"
+            android:layout_marginEnd="@dimen/small_margin"
+            android:hint="@string/filters_size_min_hint"
             app:layout_constraintEnd_toEndOf="@id/filters_middle_guideline"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/filters_album">
 
             <AutoCompleteTextView
+                style="@style/MyTheme.DropDown.Edit.Filled"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none" />
+                tools:ignore="LabelFor"
+                tools:text="1 MB" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -84,20 +84,21 @@
         -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/filters_size_max"
-            style="@style/Widget.Material3.TextInputLayout.FilledBox.Dense.ExposedDropdownMenu"
+            style="@style/MyTheme.DropDown.Layout.Filled"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:hint="Size (max)"
+            android:layout_marginStart="@dimen/small_margin"
+            android:hint="@string/filters_size_max_hint"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/filters_middle_guideline"
             app:layout_constraintTop_toTopOf="@id/filters_size_min">
 
             <AutoCompleteTextView
+                style="@style/MyTheme.DropDown.Edit.Filled"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none" />
+                tools:ignore="LabelFor"
+                tools:text="100 MB" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -106,20 +107,21 @@
         -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/filters_mime"
-            style="@style/Widget.Material3.TextInputLayout.FilledBox.Dense.ExposedDropdownMenu"
+            style="@style/MyTheme.DropDown.Layout.Filled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginVertical="4dp"
-            android:hint="Mime"
+            android:layout_marginVertical="@dimen/small_margin"
+            android:hint="@string/filters_mime_hint"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/filters_size_min">
 
             <AutoCompleteTextView
+                style="@style/MyTheme.DropDown.Edit.Filled"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none" />
+                tools:ignore="LabelFor"
+                tools:text="image/jpeg" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -128,23 +130,20 @@
         -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/images_list_text"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            style="@style/MyTheme.Label.Layout.Outlined"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginVertical="4dp"
-            android:hint="Count"
+            android:layout_marginVertical="@dimen/small_margin"
+            android:hint="@string/filters_count_hint"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/filters_mime">
 
             <com.google.android.material.textfield.TextInputEditText
-                style="@style/TextAppearance.Material3.LabelSmall"
+                style="@style/MyTheme.Label.Edit.Text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none"
-                android:text="12"
-                android:textAlignment="center" />
+                tools:text="12" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -155,10 +154,10 @@
             android:id="@+id/filters_container_overlay"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginStart="-16dp"
-            android:layout_marginTop="-16dp"
-            android:layout_marginEnd="-16dp"
-            android:layout_marginBottom="-16dp"
+            android:layout_marginStart="@dimen/neg_medium_margin"
+            android:layout_marginTop="@dimen/neg_medium_margin"
+            android:layout_marginEnd="@dimen/neg_medium_margin"
+            android:layout_marginBottom="@dimen/neg_medium_margin"
             android:clickable="false"
             android:focusable="false"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -175,7 +174,8 @@
         android:id="@+id/dynamic_background"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:elevation="0dp"/>
+        android:elevation="0dp"
+        tools:visibility="gone" />
 
     <!--
     Placeholder
@@ -186,7 +186,7 @@
         android:layout_height="0dp"
         android:gravity="center_vertical"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:padding="@dimen/medium_padding"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -195,16 +195,15 @@
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/images_list_placeholder_text"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            style="@style/MyTheme.Label.Layout.Outlined"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
             <com.google.android.material.textfield.TextInputEditText
+                style="@style/MyTheme.Label.Edit.Text.Large"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="none"
-                android:text="no results"
-                android:textAlignment="center" />
+                android:text="@string/placeholder_text" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -235,15 +234,14 @@
         android:id="@+id/details_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#CC000000"
+        android:background="?android:attr/colorBackground"
         android:clipToPadding="false"
         android:elevation="10dp"
-        android:padding="16dp"
+        android:padding="@dimen/medium_padding"
         android:visibility="visible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="parent"
-        tools:background="#CC000000"
         tools:translationY="-200dp">
 
         <!--
@@ -271,25 +269,24 @@
         -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/details_uri"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            style="@style/MyTheme.Label.Layout.Outlined"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:hint="Uri"
+            android:hint="@string/details_uri_hint"
             app:endIconDrawable="@drawable/ic_baseline_share_24"
             app:endIconMode="custom"
-            app:endIconTint="#FFFFFF"
+            app:endIconTint="?attr/colorPrimary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@id/details_container">
 
             <com.google.android.material.textfield.TextInputEditText
-                style="@style/TextAppearance.Material3.LabelSmall"
+                style="@style/MyTheme.Label.Edit.Text.Small"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none"
-                android:text="content://images/Download/download01.jpeg"
-                android:textAlignment="center" />
+                android:ellipsize="end"
+                android:maxLines="1"
+                tools:text="content://images/Download/download01.jpeg" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -298,23 +295,21 @@
         -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/details_width"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            style="@style/MyTheme.Label.Layout.Outlined"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="2dp"
-            android:hint="Width"
+            android:layout_marginVertical="@dimen/small_margin"
+            android:layout_marginEnd="@dimen/small_margin"
+            android:hint="@string/details_width_hint"
             app:layout_constraintEnd_toEndOf="@id/details_left_guideline"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/details_uri">
 
             <com.google.android.material.textfield.TextInputEditText
-                style="@style/TextAppearance.Material3.LabelSmall"
+                style="@style/MyTheme.Label.Edit.Text.Small"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none"
-                android:text="2000"
-                android:textAlignment="center" />
+                tools:text="2000" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -323,24 +318,21 @@
         -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/details_height"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            style="@style/MyTheme.Label.Layout.Outlined"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:layout_marginEnd="2dp"
-            android:hint="Height"
+            android:layout_marginStart="@dimen/small_margin"
+            android:layout_marginEnd="@dimen/small_margin"
+            android:hint="@string/details_height_hint"
             app:layout_constraintEnd_toEndOf="@id/details_right_guideline"
             app:layout_constraintStart_toStartOf="@id/details_left_guideline"
             app:layout_constraintTop_toTopOf="@id/details_width">
 
             <com.google.android.material.textfield.TextInputEditText
-                style="@style/TextAppearance.Material3.LabelSmall"
+                style="@style/MyTheme.Label.Edit.Text.Small"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none"
-                android:text="2000"
-                android:textAlignment="center" />
+                tools:text="2000" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -349,23 +341,20 @@
         -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/details_size"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            style="@style/MyTheme.Label.Layout.Outlined"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:hint="Size"
+            android:layout_marginStart="@dimen/small_margin"
+            android:hint="@string/details_size_hint"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/details_right_guideline"
             app:layout_constraintTop_toTopOf="@id/details_width">
 
             <com.google.android.material.textfield.TextInputEditText
-                style="@style/TextAppearance.Material3.LabelSmall"
+                style="@style/MyTheme.Label.Edit.Text.Small"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none"
-                android:text="12 MB"
-                android:textAlignment="center" />
+                tools:text="12 MB" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -374,23 +363,21 @@
         -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/details_date_taken"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            style="@style/MyTheme.Label.Layout.Outlined"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="2dp"
-            android:hint="Date taken"
+            android:layout_marginVertical="@dimen/small_margin"
+            android:layout_marginEnd="@dimen/small_margin"
+            android:hint="@string/details_date_taken_hint"
             app:layout_constraintEnd_toEndOf="@id/details_left_guideline"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/details_width">
 
             <com.google.android.material.textfield.TextInputEditText
-                style="@style/TextAppearance.Material3.LabelSmall"
+                style="@style/MyTheme.Label.Edit.Text.Small"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none"
-                android:text="21/05/2010"
-                android:textAlignment="center" />
+                tools:text="21/05/2010" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -399,24 +386,21 @@
         -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/details_date_modified"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            style="@style/MyTheme.Label.Layout.Outlined"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:layout_marginEnd="2dp"
-            android:hint="Date modified"
+            android:layout_marginStart="@dimen/small_margin"
+            android:layout_marginEnd="@dimen/small_margin"
+            android:hint="@string/details_date_modified_hint"
             app:layout_constraintEnd_toEndOf="@id/details_right_guideline"
             app:layout_constraintStart_toStartOf="@id/details_left_guideline"
             app:layout_constraintTop_toTopOf="@id/details_date_taken">
 
             <com.google.android.material.textfield.TextInputEditText
-                style="@style/TextAppearance.Material3.LabelSmall"
+                style="@style/MyTheme.Label.Edit.Text.Small"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none"
-                android:text="21/05/2012"
-                android:textAlignment="center" />
+                tools:text="21/05/2012" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -428,20 +412,17 @@
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:hint="Mime"
+            android:layout_marginStart="@dimen/small_margin"
+            android:hint="@string/details_mime_hint"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/details_right_guideline"
             app:layout_constraintTop_toTopOf="@id/details_date_taken">
 
             <com.google.android.material.textfield.TextInputEditText
-                style="@style/TextAppearance.Material3.LabelSmall"
+                style="@style/MyTheme.Label.Edit.Text.Small"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="none"
-                android:text="image/jpeg"
-                android:textAlignment="center" />
+                tools:text="image/jpeg" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -452,10 +433,10 @@
             android:id="@+id/details_container_overlay"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginStart="-16dp"
-            android:layout_marginTop="-16dp"
-            android:layout_marginEnd="-16dp"
-            android:layout_marginBottom="-16dp"
+            android:layout_marginStart="@dimen/neg_medium_margin"
+            android:layout_marginTop="@dimen/neg_medium_margin"
+            android:layout_marginEnd="@dimen/neg_medium_margin"
+            android:layout_marginBottom="@dimen/neg_medium_margin"
             android:clickable="false"
             android:focusable="false"
             app:layout_constraintBottom_toBottomOf="parent"
