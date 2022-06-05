@@ -47,6 +47,10 @@ class MainScreenViewModel @Inject constructor(
 
                 val sizes = mutableListOf(
                     ZERO_SIZE_FILTER,
+                    KB_100_SIZE_FILTER,
+                    MB_1_SIZE_FILTER,
+                    MB_5_SIZE_FILTER,
+                    MB_10_SIZE_FILTER,
                     INF_SIZE_FILTER,
                 )
 

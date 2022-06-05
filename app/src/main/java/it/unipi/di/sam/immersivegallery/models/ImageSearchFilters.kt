@@ -43,7 +43,27 @@ val ALL_BUCKET_FILTER = ImageSearchFilterBucket(
 
 val ZERO_SIZE_FILTER = ImageSearchFilterSize(
     bytes = 0,
-    displayName = "Zero",
+    displayName = "0 B",
+)
+
+val KB_100_SIZE_FILTER = ImageSearchFilterSize(
+    bytes = 100 * 1024,
+    displayName = "100 KB",
+)
+
+val MB_1_SIZE_FILTER = ImageSearchFilterSize(
+    bytes = 1 * 1024 * 1024,
+    displayName = "1 MB",
+)
+
+val MB_5_SIZE_FILTER = ImageSearchFilterSize(
+    bytes = 5 * 1024 * 1024,
+    displayName = "5 MB",
+)
+
+val MB_10_SIZE_FILTER = ImageSearchFilterSize(
+    bytes = 10 * 1024 * 1024,
+    displayName = "10 MB",
 )
 
 val INF_SIZE_FILTER = ImageSearchFilterSize(

@@ -33,22 +33,8 @@ import kotlin.math.roundToInt
 class MainScreenFragment :
     BaseFragment<FragmentMainScreenBinding>(FragmentMainScreenBinding::inflate) {
 
-    // TODO: Add size filters
-
-    // (High Priority)
-    // TODO: Catch intent for opening images
-
-    // (Mid Priority)
-    // TODO: Fullscreen support (w-landscape => custom layout for landscape)
-
-    // (Low Priority)
     // TODO: Tutorial (first time)
     // TODO: Auto "next"
-
-    // (?)
-    // TODO: OnResume (reload filters ?)
-    // TODO: Create data folders (by size, by ratio, ecc)
-    // TODO: Query to find old position (cause may change if user remove inner elements) (id changes ?)
 
     companion object {
         const val V_SLIDE_TRIGGER = 0.75F // Percentage
