@@ -1,7 +1,11 @@
 package it.unipi.di.sam.immersivegallery
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
+import android.util.Log
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import androidx.appcompat.app.AppCompatActivity
@@ -35,5 +39,34 @@ class MainActivity : AppCompatActivity() {
                 return@setOnApplyWindowInsetsListener view.onApplyWindowInsets(insets)
             }
         }
+
+        when {
+            intent?.action == Intent.ACTION_SEND
+                    && intent?.type?.startsWith("image/") == true -> {
+                // Preview *Single*
+                (intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri)?.let {
+                    preview(listOf(it))
+                }
+            }
+            intent?.action == Intent.ACTION_SEND_MULTIPLE
+                    && intent?.type?.startsWith("image/") == true -> {
+                // Preview *Multiple*
+                (intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM))?.let {
+                    preview(it.mapNotNull { el -> el as Uri? })
+                }
+            }
+            else -> {
+                // Home screen
+                homescreen()
+            }
+        }
+    }
+
+    private fun preview(uris: List<Uri>) {
+        Log.d("AC", uris.joinToString { uri -> uri.toString() })
+    }
+
+    private fun homescreen() {
+        Log.d("AC", "HomeScreen")
     }
 }
