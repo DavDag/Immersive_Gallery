@@ -1,6 +1,7 @@
 package it.unipi.di.sam.immersivegallery.ui.main
 
 import android.content.Intent
+import android.database.MergeCursor
 import android.icu.text.SimpleDateFormat
 import android.opengl.GLSurfaceView
 import android.os.Bundle
@@ -23,7 +24,6 @@ import it.unipi.di.sam.immersivegallery.common.*
 import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
 import it.unipi.di.sam.immersivegallery.models.*
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.min
@@ -39,8 +39,6 @@ class MainScreenFragment :
     // TODO: Gray => White (UI)
     // TODO: Add styles for labels
     // TODO: Dark mode (?)
-
-    // TODO: Init speed
 
     // (High Priority)
     // TODO: Catch intent for opening images
@@ -263,7 +261,7 @@ class MainScreenFragment :
         viewModel.getOldFilters()
 
         // Create cursor to retrieve filters data
-        val query = ContentResolverCompat.query(
+        val query1 = ContentResolverCompat.query(
             requireContext().contentResolver,
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             arrayOf(
@@ -277,6 +275,27 @@ class MainScreenFragment :
             null,
             null,
         )
+
+        // // NOT needed.
+        // // EXTERNAL_CONTENT_URI refers to "externally" accessible media.
+        // // Create cursor to retrieve filters data
+        // val query2 = ContentResolverCompat.query(
+        //     requireContext().contentResolver,
+        //     MediaStore.Images.Media.INTERNAL_CONTENT_URI,
+        //     arrayOf(
+        //         MediaStore.Images.Media.SIZE,
+        //         MediaStore.Images.Media.MIME_TYPE,
+        //         MediaStore.Images.Media.BUCKET_ID,
+        //         MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
+        //     ),
+        //     null,
+        //     null,
+        //     null,
+        //     null,
+        // )
+
+        // Merge query results
+        val query = MergeCursor(arrayOf(query1 /* query2 */))
 
         // Send cursor to the ViewModel to proceed asynchronously
         viewModel.loadFiltersQueryAsync(query)
@@ -325,8 +344,8 @@ class MainScreenFragment :
                 selectionArgs.add(mime.type)
             }
 
-        // Create cursor to retrieve images data
-        val query = ContentResolverCompat.query(
+        // Create cursor to retrieve images data (from EXTERNAL_CONTENT_URI)
+        val query1 = ContentResolverCompat.query(
             requireContext().contentResolver,
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             IMAGE_DATA_QUERY_COLUMNS,
@@ -335,6 +354,22 @@ class MainScreenFragment :
             null,
             null,
         )
+
+        // // NOT needed.
+        // // EXTERNAL_CONTENT_URI refers to "externally" accessible media.
+        // // Create cursor to retrieve images data (from INTERNAL_CONTENT_URI)
+        // val query2 = ContentResolverCompat.query(
+        //     requireContext().contentResolver,
+        //     MediaStore.Images.Media.INTERNAL_CONTENT_URI,
+        //     IMAGE_DATA_QUERY_COLUMNS,
+        //     selection.toString(),
+        //     selectionArgs.toTypedArray(),
+        //     null,
+        //     null,
+        // )
+
+        // Merge query results
+        val query = MergeCursor(arrayOf(query1 /* query2 */))
 
         // Update cursor
         val position = binding.imagesList.adapter!!.replaceCursor(query, resetPosition)
