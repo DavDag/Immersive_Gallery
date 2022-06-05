@@ -22,11 +22,10 @@ class MainActivity : AppCompatActivity() {
         binding = MainActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        window.setDecorFitsSystemWindows(false)
-        window.decorView.windowInsetsController?.systemBarsBehavior =
-            WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.setDecorFitsSystemWindows(false)
+            window.decorView.windowInsetsController?.systemBarsBehavior =
+                WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             window.decorView.setOnApplyWindowInsetsListener { view, insets ->
                 _isFullScreen =
                     !insets.isVisible(

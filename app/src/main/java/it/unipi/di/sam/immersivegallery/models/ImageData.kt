@@ -4,6 +4,8 @@ import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.net.Uri
 import it.unipi.di.sam.immersivegallery.common.toBitmap
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.Lock
 
 data class ImageData(
     val uri: Uri,
@@ -21,8 +23,10 @@ data class ImageData(
     private var _bitmap: Bitmap? = null
 
     public fun bitmap(resolver: ContentResolver): Bitmap {
-        if (_bitmap == null) {
-            _bitmap = uri.toBitmap(resolver)
+        synchronized(this) {
+            if (_bitmap == null) {
+                _bitmap = uri.toBitmap(resolver)
+            }
         }
         return _bitmap!!
     }

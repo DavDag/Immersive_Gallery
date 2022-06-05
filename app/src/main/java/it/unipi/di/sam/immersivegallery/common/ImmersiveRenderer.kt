@@ -6,6 +6,8 @@ import android.opengl.GLSurfaceView
 import android.opengl.GLUtils
 import android.opengl.Matrix
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -244,6 +246,10 @@ class ImmersiveRenderer : GLSurfaceView.Renderer {
     private val uTimeLoc by lazy { api.glGetUniformLocation(program, "uTime").ck() }
     private var lastTimeTick = 0L
     private var timePassed = 0F
+
+    // =============================================================================================
+
+    public val updateScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
     // =============================================================================================
 

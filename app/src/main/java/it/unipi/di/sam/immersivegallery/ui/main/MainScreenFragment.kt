@@ -6,7 +6,6 @@ import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.InputType
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.AutoCompleteTextView
@@ -14,7 +13,6 @@ import androidx.core.content.ContentResolverCompat
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.children
 import androidx.core.view.isVisible
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.navGraphViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -24,7 +22,8 @@ import it.unipi.di.sam.immersivegallery.R
 import it.unipi.di.sam.immersivegallery.common.*
 import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
 import it.unipi.di.sam.immersivegallery.models.*
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.min
@@ -123,6 +122,7 @@ class MainScreenFragment :
     }
 
     private val renderer = ImmersiveRenderer()
+    private var rendererUpdateParamsJob: Job? = null
 
     override fun setup(savedInstanceState: Bundle?) {
         setupUI()
@@ -708,29 +708,43 @@ class MainScreenFragment :
             else (totalPercentage % (1F / itemCount) * itemCount * 100F)
                 .roundToInt().toFloat()
 
-        // Log.d("RV", "Percentage: $percentage")
+        // Check swipe direction
+        val isSwipeRL = (gestureListener.scrollDistance < 0)
+
+        if (isSwipeRL) {
+            renderer.updatePercentage((percentage % 100F) * (1F / H_SLIDE_TRIGGER))
+        } else {
+            renderer.updatePercentage(((100F - percentage) % 100F) * (1F / H_SLIDE_TRIGGER))
+        }
 
         // Retrieve adapter and resolver
         val adapter = (binding.imagesList.adapter as GenericRecyclerAdapter<ImageData, *, *>)
         val resolver = requireActivity().contentResolver
 
-        // Log.d("RV", "Pos: ${adapter.prevPosition()} <- ${adapter.getPosition()} -> ${adapter.nextPosition()}")
+        val currP = adapter.getPosition()
+        val prevP = adapter.prevPosition()
+        val nextP = adapter.nextPosition()
 
-        // Update "src" bitmap
-        val curr = adapter.itemAt(adapter.getPosition())
-        renderer.updateSrcImage(curr?.bitmap(resolver))
-
+        // Log.d("RV", "Percentage: $percentage")
+        // Log.d("RV", "Pos: $prevP <- $currP -> $nextP")
         // Log.d("RV", "Scroll Distance ${gestureListener.scrollDistance}")
 
-        // Update "next" bitmap (based on scroll direction)
-        if (gestureListener.scrollDistance < 0) {
-            val next = adapter.itemAt(adapter.nextPosition())
-            renderer.updateDestImage(next?.bitmap(resolver))
-            renderer.updatePercentage((percentage % 100F) * (1F / H_SLIDE_TRIGGER))
-        } else {
-            val prev = adapter.itemAt(adapter.prevPosition())
-            renderer.updateDestImage(prev?.bitmap(resolver))
-            renderer.updatePercentage(((100F - percentage) % 100F) * (1F / H_SLIDE_TRIGGER))
+        // Bitmaps update (can be expensive)
+        if (rendererUpdateParamsJob == null || rendererUpdateParamsJob?.isCompleted == true) {
+            rendererUpdateParamsJob = renderer.updateScope.launch {
+                // Update "src" bitmap
+                val curr = adapter.itemAt(currP)
+                renderer.updateSrcImage(curr?.bitmap(resolver))
+
+                // Update "next" bitmap (based on scroll direction)
+                if (isSwipeRL) {
+                    val next = adapter.itemAt(nextP)
+                    renderer.updateDestImage(next?.bitmap(resolver))
+                } else {
+                    val prev = adapter.itemAt(prevP)
+                    renderer.updateDestImage(prev?.bitmap(resolver))
+                }
+            }
         }
     }
 
@@ -744,9 +758,14 @@ class MainScreenFragment :
 
         // Log.d("RV", "Image: ${curr?.id}")
 
-        // Update renderer data
-        renderer.updateSrcImage(curr?.bitmap(resolver))
-        renderer.updateDestImage(null)
-        renderer.updatePercentage(0F)
+        // To correctly wait any pending update
+        rendererUpdateParamsJob?.cancel()
+
+        // Update renderer data (async)
+        renderer.updateScope.launch {
+            renderer.updateSrcImage(curr?.bitmap(resolver))
+            renderer.updateDestImage(null)
+            renderer.updatePercentage(0F)
+        }
     }
 }

@@ -10,6 +10,8 @@ import android.view.WindowInsets
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.viewbinding.ViewBinding
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 
 typealias InflateFun<T> = (LayoutInflater, ViewGroup?, Boolean) -> T
 
