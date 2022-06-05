@@ -49,7 +49,6 @@ class MainScreenFragment :
     // (Low Priority)
     // TODO: Tutorial (first time)
     // TODO: Auto "next"
-    // TODO: Merge cursors to gen INTERNAL/EXTERNAL queries ?
 
     // (?)
     // TODO: OnResume (reload filters ?)
@@ -427,6 +426,8 @@ class MainScreenFragment :
             detailsMime.editText!!.setText(data?.mime.toString())
             detailsDateTaken.editText!!.setText(data?.dataTaken.toDateTime(DATE_FORMAT))
             detailsDateModified.editText!!.setText(data?.dataModified.toDateTime(DATE_FORMAT))
+
+            detailsUri.isEndIconVisible = (data != null)
 
             detailsUri.setEndIconOnClickListener(null)
             if (data == null) return
