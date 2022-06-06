@@ -7,6 +7,7 @@ import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.InputType
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.AutoCompleteTextView
@@ -19,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
+import it.unipi.di.sam.immersivegallery.MainActivity
 import it.unipi.di.sam.immersivegallery.R
 import it.unipi.di.sam.immersivegallery.common.*
 import it.unipi.di.sam.immersivegallery.databinding.FragmentMainScreenBinding
@@ -103,7 +105,24 @@ class MainScreenFragment :
     private val renderer = ImmersiveRenderer()
     private var rendererUpdateParamsJob: Job? = null
 
+    private lateinit var requestedIds: List<Int>
+    private val requestedIdsSelection by lazy {
+        val string =
+            requestedIds.joinToString(" OR ") {
+                "${MediaStore.Images.Media._ID} = ?"
+            }
+        " AND ($string)"
+    }
+    private val requestedIdsSelectionArgs by lazy { requestedIds.map(Int::toString) }
+
     override fun setup(savedInstanceState: Bundle?) {
+        // Check if user requested particular list of ids
+        requireActivity().intent.getIntegerArrayListExtra(MainActivity.IDS_KEY)?.let {
+            // Log.d("MSF", it.joinToString { id -> id.toString() })
+            requestedIds = it
+        }
+
+        // Standard
         setupUI()
         setupObservers()
         loadFiltersAsync()
@@ -326,6 +345,13 @@ class MainScreenFragment :
                 selection.append(" AND ${MediaStore.Images.Media.MIME_TYPE} = ?")
                 selectionArgs.add(mime.type)
             }
+
+        Log.d("MSF", requestedIdsSelection)
+        Log.d("MSF", requestedIdsSelectionArgs.joinToString())
+        if (requestedIds.isNotEmpty()) {
+            selection.append(requestedIdsSelection)
+            selectionArgs.addAll(requestedIdsSelectionArgs)
+        }
 
         // Create cursor to retrieve images data (from EXTERNAL_CONTENT_URI)
         val query1 = ContentResolverCompat.query(
